@@ -1,7 +1,19 @@
 all: smc_compiler
 
-smc_compiler: smc_compiler_parser.c smc_compiler_lexer.c
-	gcc -o smc_compiler -Wall smc_compiler_parser.c smc_compiler_lexer.c
+CC=gcc
+CXX=g++
+CFLAGS=-I.
+CXXFLAGS=-I.
+DEPS = smc_compiler.h smc_compiler_parser.h
+
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+%.o: %.cpp $(DEPS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
+
+smc_compiler: smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o
+	g++ -o smc_compiler smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o
 
 smc_compiler_parser.c: smc_compiler_parser.y
 	./lemon -p -s smc_compiler_parser.y

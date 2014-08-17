@@ -7,6 +7,7 @@
 fsm ::= fsm_tokens.
 
 fsm_tokens ::= fsm_token fsm_tokens.
+fsm_tokens ::= .
 
 fsm_token ::= raw_source.
 fsm_token ::= start_state.
@@ -49,9 +50,15 @@ raw_code_line ::= RAW_CODE_LINE.
 
 map ::= MAP word MAP_BEGIN states MAP_END.
 
-states ::= word entry exit BLOCK_BEGIN transitions BLOCK_END.
+states ::= state states.
+states ::= .
 
-transitions ::= word transition_args guard next_state BLOCK_BEGIN actions BLOCK_END.
+state ::= word entry exit BLOCK_BEGIN transitions BLOCK_END.
+
+transitions ::= transition transitions.
+transitions ::= .
+
+transition ::= word transition_args guard next_state BLOCK_BEGIN actions BLOCK_END.
 
 transition_args ::= PARENTHESIS_BEGIN parameters PARENTHESIS_END.
 transition_args ::= .

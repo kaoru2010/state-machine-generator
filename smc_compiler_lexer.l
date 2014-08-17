@@ -2,7 +2,7 @@
 %option stack
 %x raw_source
 %x expect_word raw_code_line
-%x in_map map_state_def map_raw_code map_arguments
+%x in_map map_state_def map_raw_code map_arguments map_transition
 %x comment1
 %x comment2
 
@@ -64,12 +64,19 @@ WORD    [A-Za-z][A-Za-z0-9_.]*|_[A-Za-z][A-Za-z0-9_.]*
 }
 
 <map_state_def>{
+    [ \t\n] ;
     "%%" BEGIN(INITIAL); return MAP_END;
-    "{" return BLOCK_BEGIN;
-    "}" return BLOCK_END;
-    Entry BEGIN(map_raw_code); return ENTRY;
-    Exit BEGIN(map_raw_code); return EXIT;
-    "[" BEGIN(map_raw_code); return CONDITION_BEGIN;
+    Entry yy_push_state(map_raw_code); return ENTRY;
+    Exit yy_push_state(map_raw_code); return EXIT;
+    "{" BEGIN(map_transition); return BLOCK_BEGIN;
+    {WORD} return WORD;
+    . printf("unmatched: %s\n", yytext);
+}
+
+<map_transition>{
+    "}" BEGIN(map_state_def); return BLOCK_END;
+    "{" yy_push_state(map_raw_code); return BLOCK_BEGIN;
+    "[" yy_push_state(map_raw_code); return CONDITION_BEGIN;
     "]" return CONDITION_END;
     "(" BEGIN(map_arguments); return PARENTHESIS_BEGIN;
     ")" return PARENTHESIS_END;
@@ -85,9 +92,9 @@ WORD    [A-Za-z][A-Za-z0-9_.]*|_[A-Za-z][A-Za-z0-9_.]*
 <map_raw_code>{
     [ \t\n] ;
     [^\]{}]+ return RAW_CODE;
-    "]" BEGIN(map_state_def); return CONDITION_END;
+    "]" yy_pop_state(); return CONDITION_END;
     "{" return BLOCK_BEGIN;
-    "}" BEGIN(map_state_def); return BLOCK_END;
+    "}" yy_pop_state(); return BLOCK_END;
 }
 
 <map_arguments>{
@@ -112,13 +119,10 @@ WORD    [A-Za-z][A-Za-z0-9_.]*|_[A-Za-z][A-Za-z0-9_.]*
 
 %%
 
-int main()
+int get_token(context_t *context, token_t *token)
 {
-    while (1) {
-        int token_id = yylex();
-        if ( !token_id) break;
-
-        printf("token_id=%d %s\n", token_id, yytext);
-    }
-    return 0;
+    int token_id = yylex();
+    token->text = yytext;
+    token->size = yyleng;
+    return token_id;
 }
