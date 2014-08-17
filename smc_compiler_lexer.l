@@ -9,6 +9,7 @@
 %{
 #include <stdio.h>
 #include "smc_compiler_parser.h"
+#include "smc_compiler.h"
 %}
 
 WORD    [A-Za-z][A-Za-z0-9_.]*|_[A-Za-z][A-Za-z0-9_.]*
@@ -18,6 +19,7 @@ WORD    [A-Za-z][A-Za-z0-9_.]*|_[A-Za-z][A-Za-z0-9_.]*
 "%{" BEGIN(raw_source); return RAW_SOURCE_BEGIN;
 "%start" BEGIN(expect_word); return START;
 "%class" BEGIN(expect_word); return CLASS;
+"%fsmclass" BEGIN(expect_word); return FSMCLASS;
 "%header" BEGIN(raw_code_line); return HEADER;
 "%include" BEGIN(raw_code_line); return INCLUDE;
 "%package" BEGIN(expect_word); return PACKAGE;
@@ -81,6 +83,7 @@ WORD    [A-Za-z][A-Za-z0-9_.]*|_[A-Za-z][A-Za-z0-9_.]*
 }
 
 <map_raw_code>{
+    [ \t\n] ;
     [^\]{}]+ return RAW_CODE;
     "]" BEGIN(map_state_def); return CONDITION_END;
     "{" return BLOCK_BEGIN;
@@ -115,7 +118,7 @@ int main()
         int token_id = yylex();
         if ( !token_id) break;
 
-        printf("token_id=%d\n", token_id);
+        printf("token_id=%d %s\n", token_id, yytext);
     }
     return 0;
 }

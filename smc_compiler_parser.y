@@ -11,6 +11,7 @@ fsm_tokens ::= fsm_token fsm_tokens.
 fsm_token ::= raw_source.
 fsm_token ::= start_state.
 fsm_token ::= class_name.
+fsm_token ::= fsmclass_name.
 fsm_token ::= header_file.
 fsm_token ::= include_file.
 fsm_token ::= package_name.
@@ -29,6 +30,8 @@ raw_source_body ::= .
 start_state ::= START word DOUBLE_COLON word.
 
 class_name ::= CLASS word.
+
+fsmclass_name ::= FSMCLASS word.
 
 header_file ::= HEADER raw_code_line.
 
