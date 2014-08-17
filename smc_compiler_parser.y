@@ -2,7 +2,35 @@
 %include {
     #include <stdlib.h>
     #include <assert.h>
+    #include "smc_compiler.h"
 }
+
+%extra_argument { void *context }
+%token_type { token_t* }
+%token_destructor { destroy_token($$); }
+
+%type raw_code { void * }
+%type entry { void * }
+%type exit { void * }
+%type word { void * }
+%type state { void * }
+%type next_state { void * }
+%type states { void * }
+%type transition { void * }
+%type transitions { void * }
+%type action { void * }
+%type actions { void * }
+%destructor raw_code { destroy_string($$); }
+%destructor entry { destroy_actions($$); }
+%destructor exit { destroy_actions($$); }
+%destructor word { destroy_string($$); }
+%destructor state { destroy_state($$); }
+%destructor next_state { destroy_string($$); }
+%destructor states { destroy_states($$); }
+%destructor transition { destroy_transition($$); }
+%destructor transitions { destroy_transitions($$); }
+%destructor action { destroy_string($$); }
+%destructor actions { destroy_actions($$); }
 
 fsm ::= fsm_tokens.
 
@@ -28,7 +56,7 @@ raw_source ::= RAW_SOURCE_BEGIN raw_source_body RAW_SOURCE_END.
 raw_source_body ::= RAW_SOURCE raw_source_body.
 raw_source_body ::= .
 
-start_state ::= START word DOUBLE_COLON word.
+start_state ::= START word(A) DOUBLE_COLON word(B). { set_start(A, B); }
 
 class_name ::= CLASS word.
 
@@ -48,17 +76,17 @@ access ::= ACCESS raw_code_line.
 
 raw_code_line ::= RAW_CODE_LINE.
 
-map ::= MAP word MAP_BEGIN states MAP_END.
+map ::= MAP word(A) MAP_BEGIN states(B) MAP_END. { define_map(A, B); }
 
-states ::= state states.
+states(X) ::= state(A) states(B). { X = add_state(A, B); }
 states ::= .
 
-state ::= word entry exit BLOCK_BEGIN transitions BLOCK_END.
+state(X) ::= word(A) entry(B) exit(C) BLOCK_BEGIN transitions(D) BLOCK_END. { X = create_state(A, B, C, D); }
 
-transitions ::= transition transitions.
+transitions(X) ::= transition(A) transitions(B). { X = add_transition(A, B); }
 transitions ::= .
 
-transition ::= word transition_args guard next_state BLOCK_BEGIN actions BLOCK_END.
+transition(X) ::= word(A) transition_args guard next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = create_transition(A, D, E); }
 
 transition_args ::= PARENTHESIS_BEGIN parameters PARENTHESIS_END.
 transition_args ::= .
@@ -71,28 +99,27 @@ parameter ::= word COLON raw_code.
 guard ::= CONDITION_BEGIN raw_code CONDITION_END.
 guard ::= .
 
-next_state ::= word.
+next_state(X) ::= word(A). { X = A; A = NULL; }
 next_state ::= NIL.
 
-actions ::= action actions.
+actions(X) ::= action(A) actions(B). { X = add_action(A, B); }
 actions ::= .
 
-action ::= word PARENTHESIS_BEGIN arguments PARENTHESIS_END SEMICOLON.
+action(X) ::= word(A) PARENTHESIS_BEGIN arguments PARENTHESIS_END SEMICOLON. { X = A; A = NULL; }
 
-arguments ::= raw_code.
 arguments ::= raw_code COMMA arguments.
+arguments ::= raw_code.
 
-entry ::= ENTRY.
+entry(X) ::= ENTRY BLOCK_BEGIN actions(A) BLOCK_END. { X = A; A = NULL; }
 entry ::= .
 
-exit ::= EXIT.
+exit(X) ::= EXIT BLOCK_BEGIN actions(A) BLOCK_END. { X = A; A = NULL; }
 exit ::= .
 
-raw_code ::= raw_code_chunk raw_code.
+raw_code(X) ::= RAW_CODE(A) raw_code(B). { X = add_string(A, B); }
 raw_code ::= .
-raw_code_chunk ::= RAW_CODE.
 
-word ::= WORD.
+word(X) ::= WORD(A). { X = create_string(A); }
 
 comment1 ::= COMMENT1_BEGIN COMMENT1_BODY.
 

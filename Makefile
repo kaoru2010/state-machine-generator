@@ -10,7 +10,7 @@ DEPS = smc_compiler.h smc_compiler_parser.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 %.o: %.cpp $(DEPS)
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
+	$(CXX) -std=c++11 -c -o $@ $< $(CXXFLAGS)
 
 smc_compiler: smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o
 	g++ -o smc_compiler smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o
