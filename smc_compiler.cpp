@@ -219,10 +219,10 @@ void define_map(void *word0, void *states0) {
 
         // 現在のステートをNULLにセットする。
         indented_out(indent) << "previousState = currentState;\n";
-        indented_out(indent) << "currentState = null;\n";
 
         // カスタムアクションを出力する。
         if ( !transition.get_action_list().empty()) {
+            indented_out(indent) << "currentState = null;\n";
             indented_out(indent) << "try {" << "\n";
             indented_out(indent) << "    // Custom action" << "\n";
         }
