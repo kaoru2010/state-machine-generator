@@ -60,13 +60,13 @@ start_state ::= START word(A) DOUBLE_COLON word(B). { set_start(A, B); }
 
 class_name ::= CLASS word.
 
-fsmclass_name ::= FSMCLASS word.
+fsmclass_name ::= FSMCLASS word(A). { set_fsmclass(A); }
 
 header_file ::= HEADER raw_code_line.
 
 include_file ::= INCLUDE raw_code_line.
 
-package_name ::= PACKAGE word.
+package_name ::= PACKAGE word(A). { set_package_name(A); }
 
 import ::= IMPORT raw_code_line.
 
