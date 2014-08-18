@@ -196,10 +196,37 @@ void set_package_name(void *package_name) {
     g_package_name = *static_cast<string*>(package_name);
 }
 
+class state_map_t
+{
+    string state_map_name_;
+    state_list_t state_list_;
+
+public:
+    state_map_t(string const& state_map_name, state_list_t const& state_list)
+    :   state_map_name_(state_map_name)
+    ,   state_list_(state_list)
+    {
+    }
+
+    string get_state_map_name() const { return state_map_name_; }
+    state_list_t get_state_list() const { return state_list_; }
+};
+
+vector<state_map_t> g_state_map_list;
 
 void define_map(void *word0, void *states0) {
     string *word = static_cast<string*>(word0);
     state_list_t *list = static_cast<state_list_t *>(states0);
+
+    g_state_map_list.emplace_back(*word, *list);
+}
+
+} // extern "C" {
+
+void generate_state_map(state_map_t const& state_map) {
+
+    string const& state_map_name = state_map.get_state_map_name();
+    state_list_t const& state_list = state_map.get_state_list();
 
     auto indented_out = [](int indent) -> ostream&
     {
@@ -244,7 +271,7 @@ void define_map(void *word0, void *states0) {
              indented_out(next_state_indent) << "currentState = previousState;\n";
         }
         else {
-             indented_out(next_state_indent) << "setState(" << *word << "." << transition.get_next_state() << ");\n";
+             indented_out(next_state_indent) << "setState(" << state_map_name << "." << transition.get_next_state() << ");\n";
              indented_out(next_state_indent) << "currentState.Entry();\n";
         }
 
@@ -254,8 +281,8 @@ void define_map(void *word0, void *states0) {
     };
 
     bool need_comma = false;
-    cout << "    " << "var " << *word << " = {\n";
-    for (auto const& state : *list) {
+    cout << "    " << "var " << state_map_name << " = {\n";
+    for (auto const& state : state_list) {
         if (need_comma) cout << ",\n";
 
         cout << "    " << "    " << state.get_state_name() << ": {\n"
@@ -315,16 +342,25 @@ void define_map(void *word0, void *states0) {
     }
     cout << "\n"
          << "    " << "};" << endl;
-}
 
-} // extern "C" {
+}
 
 int main()
 {
     context_t context = {};
     token_t token = {};
 
-    //ParseTrace(stdout, "DEBUG ");
+#ifdef DEBUG
+    ParseTrace(stdout, "DEBUG ");
+#endif
+
+    void *parser = ParseAlloc( malloc );
+    while (int token_id = get_token(&context, &token)) {
+        //printf("%4d %s\n", token_id, token.text);
+        Parse(parser, token_id, dup_token(&token), &context);
+    }
+    Parse(parser, 0, &token, &context);
+    ParseFree(parser, free);
 
     // https://github.com/stevekwan/experiments/blob/master/javascript/module-pattern.html
     cout << "// -*- tab-width: 4; -*-\n"
@@ -340,13 +376,9 @@ int main()
          << "    var setState = function(state) { currentState = state; if (debugMode) { console.log('ENTER STATE: %s', state.getName()); } };\n"
          ;
 
-    void *parser = ParseAlloc( malloc );
-    while (int token_id = get_token(&context, &token)) {
-        //printf("%4d %s\n", token_id, token.text);
-        Parse(parser, token_id, dup_token(&token), &context);
+    for (auto&& state_map : g_state_map_list) {
+        generate_state_map(state_map);
     }
-    Parse(parser, 0, &token, &context);
-    ParseFree(parser, free);
 
     cout << "    currentState = " << g_start_map << "." << g_start_state << ";\n"
          << "    return {\n"
