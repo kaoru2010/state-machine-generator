@@ -53,7 +53,7 @@ void destroy_actions(void *actions);
 
 void define_map(void *word, void *states);
 
-void *create_transition(void *action_name, void *next_state, void *actions);
+void *create_transition(void *action_name, void *guard, void *next_state, void *actions);
 void destroy_transition(void *transition);
 
 void *add_transition(void *transition, void *transitions);

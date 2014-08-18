@@ -9,6 +9,7 @@
 %token_type { token_t* }
 %token_destructor { destroy_token($$); }
 
+%type guard { void * }
 %type raw_code { void * }
 %type entry { void * }
 %type exit { void * }
@@ -20,6 +21,7 @@
 %type transitions { void * }
 %type action { void * }
 %type actions { void * }
+%destructor guard { destroy_string($$); }
 %destructor raw_code { destroy_string($$); }
 %destructor entry { destroy_actions($$); }
 %destructor exit { destroy_actions($$); }
@@ -86,7 +88,7 @@ state(X) ::= word(A) entry(B) exit(C) BLOCK_BEGIN transitions(D) BLOCK_END. { X 
 transitions(X) ::= transition(A) transitions(B). { X = add_transition(A, B); }
 transitions ::= .
 
-transition(X) ::= word(A) transition_args guard next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = create_transition(A, D, E); }
+transition(X) ::= word(A) transition_args guard(C) next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = create_transition(A, C, D, E); }
 
 transition_args ::= PARENTHESIS_BEGIN parameters PARENTHESIS_END.
 transition_args ::= .
@@ -96,7 +98,7 @@ parameters ::= .
 
 parameter ::= word COLON raw_code.
 
-guard ::= CONDITION_BEGIN raw_code CONDITION_END.
+guard(X) ::= CONDITION_BEGIN raw_code(A) CONDITION_END. { X = A; A = NULL; }
 guard ::= .
 
 next_state(X) ::= word(A). { X = A; A = NULL; }

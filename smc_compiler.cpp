@@ -3,9 +3,11 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <deque>
 #include <map>
 #include <set>
 #include <iostream>
+#include <algorithm>
 #include "smc_compiler.h"
 
 using namespace std;
@@ -54,30 +56,33 @@ void destroy_string(void *str) {
 typedef vector<string> action_list_t;
 
 class transition_t {
-    string transition_name_, next_state_;
+    string transition_name_, guard_, next_state_;
     action_list_t action_list_;
 
 public:
-    transition_t(string *transition_name, string *next_state, action_list_t *action_list)
+    transition_t(string *transition_name, string *guard, string *next_state, action_list_t *action_list)
     :   transition_name_(transition_name ? *transition_name : "")
+    ,   guard_(guard ? *guard : "")
     ,   next_state_(next_state ? *next_state : "")
     ,   action_list_(action_list ? *action_list : action_list_t())
     {
     }
 
     string get_transition_name() const { return transition_name_; }
+    string get_guard() const { return guard_; }
     string get_next_state() const { return next_state_; }
     action_list_t get_action_list() const { return action_list_; }
 };
 
-typedef vector<transition_t> transition_list_t;
+typedef map<string, deque<transition_t>> transition_list_t;
 
 set<string> g_transition_set;
 
-void *create_transition(void *transition_name, void *next_state, void *actions) {
+void *create_transition(void *transition_name, void *guard, void *next_state, void *actions) {
     g_transition_set.insert(*static_cast<string*>(transition_name));
     return new transition_t(
         static_cast<string*>(transition_name),
+        static_cast<string*>(guard),
         static_cast<string*>(next_state),
         static_cast<action_list_t*>(actions)
     );
@@ -95,7 +100,8 @@ void *add_transition(void *transition0, void *transitions) {
     }
 
     transition_t *transition = static_cast<transition_t*>(transition0);
-    static_cast<transition_list_t*>(transitions)->push_back(*transition);
+    transition_list_t& transitions_ref = *static_cast<transition_list_t*>(transitions);
+    transitions_ref[transition->get_transition_name()].push_front(*transition);
     return transitions;
 }
 
@@ -195,6 +201,58 @@ void define_map(void *word0, void *states0) {
     string *word = static_cast<string*>(word0);
     state_list_t *list = static_cast<state_list_t *>(states0);
 
+    auto indented_out = [](int indent) -> ostream&
+    {
+        for (int i = 0; i < indent; ++i) {
+            cout << "    ";
+        }
+        return cout;
+    };
+
+    // カスタムアクションの出力とステート遷移の出力
+    auto generate_transition = [&](transition_t const& transition, int indent)
+    {
+        // 遷移先のステートがある場合には Exit() を出力する。
+        if ( !transition.get_next_state().empty()) {
+            indented_out(indent) << "currentState.Exit();\n";
+        }
+
+        // 現在のステートをNULLにセットする。
+        indented_out(indent) << "previousState = currentState;\n";
+        indented_out(indent) << "currentState = null;\n";
+
+        // カスタムアクションを出力する。
+        if ( !transition.get_action_list().empty()) {
+            indented_out(indent) << "try {" << "\n";
+            indented_out(indent) << "    // Custom action" << "\n";
+        }
+
+        for (auto const& action : transition.get_action_list()) {
+            indented_out(indent) << "    ctxt." << action << "();\n";
+        }
+
+        // 次の遷移先への移動をfinally区の中に入れるかどうか
+        int next_state_indent = indent;
+
+        if ( !transition.get_action_list().empty()) {
+            indented_out(indent) << "} finally {" << "\n";
+            next_state_indent++;
+        }
+
+        // 遷移先のステートがある場合には Entry() を出力する。
+        if (transition.get_next_state().empty()) {
+             indented_out(next_state_indent) << "currentState = previousState;\n";
+        }
+        else {
+             indented_out(next_state_indent) << "setState(" << *word << "." << transition.get_next_state() << ");\n";
+             indented_out(next_state_indent) << "currentState.Entry();\n";
+        }
+
+        if ( !transition.get_action_list().empty()) {
+            indented_out(indent) << "}" << "\n";
+        }
+    };
+
     bool need_comma = false;
     cout << "    " << "var " << *word << " = {\n";
     for (auto const& state : *list) {
@@ -216,31 +274,34 @@ void define_map(void *word0, void *states0) {
         cout << "    " << "    " << "    " << "}"
              ;
 
-        for (auto const& transition : state.get_transitions()) {
+        for (auto const& transition_name_list_pair : state.get_transitions()) {
+            string const& transition_name = transition_name_list_pair.first;
+
             cout << ",\n"
-                 << "    " << "    " << "    " << transition.get_transition_name() << ": function() {\n"
+                 << "    " << "    " << "    " << transition_name << ": function() {\n"
                  ;
 
-            if ( !transition.get_next_state().empty()) {
-                cout << "    " << "    " << "    " << "    " << "currentState.Exit();\n";
-            }
+            bool else_block = false;
+            for (auto const& transition : transition_name_list_pair.second) {
+                if ( !transition.get_guard().empty()) {
+                    cout << "    " << "    " << "    " << "    " << (else_block ? "else if" : "if") << " (" << transition.get_guard() << ") {\n";
 
-            cout << "    " << "    " << "    " << "    " << "previousState = currentState;\n"
-                 << "    " << "    " << "    " << "    " << "currentState = null;\n"
-                 ;
+                    generate_transition(transition, 5);
 
-            for (auto const& action : transition.get_action_list()) {
-                cout << "    " << "    " << "    " << "    " << "ctxt." << action << "();\n";
-            }
+                    cout << "    " << "    " << "    " << "    " << "}\n";
+                    else_block = true;
+                }
+                else {
+                    if (else_block) {
+                        cout << "    " << "    " << "    " << "    " << "else {\n";
+                    }
 
-            if (transition.get_next_state().empty()) {
-                 cout << "    " << "    " << "    " << "    " << "currentState = previousState;\n"
-                      ;
-            }
-            else {
-                 cout << "    " << "    " << "    " << "    " << "setState(" << *word << "." << transition.get_next_state() << ");\n"
-                      << "    " << "    " << "    " << "    " << "currentState.Entry();\n"
-                      ;
+                    generate_transition(transition, else_block ? 5 : 4);
+
+                    if (else_block) {
+                        cout << "    " << "    " << "    " << "    " << "}\n";
+                    }
+                }
             }
 
             cout << "    " << "    " << "    " << "}"
