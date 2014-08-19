@@ -18,8 +18,8 @@ smc_compiler: smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o
 smc_compiler_parser.c: smc_compiler_parser.y lemon
 	./lemon -p -s smc_compiler_parser.y
 
-smc_compiler_lexer.c: smc_compiler_lexer.l smc_compiler_parser.c
-	flex --outfile=smc_compiler_lexer.c smc_compiler_lexer.l
+smc_compiler_lexer.cpp: smc_compiler_lexer.l smc_compiler_parser.c
+	flex --outfile=smc_compiler_lexer.cpp smc_compiler_lexer.l
 
 lemon: lemon.c
 	gcc -o lemon -O2 lemon.c
