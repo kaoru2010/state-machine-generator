@@ -5,10 +5,6 @@
 #include <stdio.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct context_tag {
 } context_t;
 
@@ -55,13 +51,10 @@ void define_map(void *word, void *states);
 
 void *create_transition(void *action_name, void *guard, void *next_state, void *actions);
 void destroy_transition(void *transition);
-
 void *add_transition(void *transition, void *transitions);
+
+void destroy_transitions(void *transitions);
 
 void set_start(void *map, void *state);
 void set_fsmclass(void *fsmclass);
 void set_package_name(void *package_name);
-
-#ifdef __cplusplus
-}
-#endif

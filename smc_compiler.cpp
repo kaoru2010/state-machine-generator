@@ -12,8 +12,6 @@
 
 using namespace std;
 
-extern "C" {
-
 token_t *dup_token(token_t *token) {
     token_t *new_token = (token_t *)malloc(sizeof(token_t));
     new_token->text = token->text ? strdup(token->text) : NULL;
@@ -220,8 +218,6 @@ void define_map(void *word0, void *states0) {
 
     g_state_map_list.emplace_back(*word, *list);
 }
-
-} // extern "C" {
 
 void generate_state_map(state_map_t const& state_map) {
 
