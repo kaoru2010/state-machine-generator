@@ -7,32 +7,32 @@
 
 %extra_argument { void *context }
 %token_type { token_t* }
-%token_destructor { destroy_token($$); }
+%token_destructor { delete $$; }
 
-%type guard { void * }
-%type raw_code { void * }
-%type entry { void * }
-%type exit { void * }
-%type word { void * }
-%type state { void * }
-%type next_state { void * }
-%type states { void * }
-%type transition { void * }
-%type transitions { void * }
-%type action { void * }
-%type actions { void * }
-%destructor guard { destroy_string($$); }
-%destructor raw_code { destroy_string($$); }
-%destructor entry { destroy_actions($$); }
-%destructor exit { destroy_actions($$); }
-%destructor word { destroy_string($$); }
-%destructor state { destroy_state($$); }
-%destructor next_state { destroy_string($$); }
-%destructor states { destroy_states($$); }
-%destructor transition { destroy_transition($$); }
-%destructor transitions { destroy_transitions($$); }
-%destructor action { destroy_string($$); }
-%destructor actions { destroy_actions($$); }
+%type guard { std::string * }
+%type raw_code { std::string * }
+%type entry { action_list_t * }
+%type exit { action_list_t * }
+%type word { std::string * }
+%type state { state * }
+%type next_state { std::string * }
+%type states { state_list_t * }
+%type transition { transition_t * }
+%type transitions { transition_list_t * }
+%type action { std::string * }
+%type actions { action_list_t * }
+%destructor guard { delete $$; }
+%destructor raw_code { delete $$; }
+%destructor entry { delete $$; }
+%destructor exit { delete $$; }
+%destructor word { delete $$; }
+%destructor state { delete $$; }
+%destructor next_state { delete $$; }
+%destructor states { delete $$; }
+%destructor transition { delete $$; }
+%destructor transitions { delete $$; }
+%destructor action { delete $$; }
+%destructor actions { delete $$; }
 
 fsm ::= fsm_tokens.
 
@@ -58,17 +58,17 @@ raw_source ::= RAW_SOURCE_BEGIN raw_source_body RAW_SOURCE_END.
 raw_source_body ::= RAW_SOURCE raw_source_body.
 raw_source_body ::= .
 
-start_state ::= START word(A) DOUBLE_COLON word(B). { set_start(A, B); }
+start_state ::= START word(A) DOUBLE_COLON word(B). { set_start(*A, *B); }
 
 class_name ::= CLASS word.
 
-fsmclass_name ::= FSMCLASS word(A). { set_fsmclass(A); }
+fsmclass_name ::= FSMCLASS word(A). { set_fsmclass(*A); }
 
 header_file ::= HEADER raw_code_line.
 
 include_file ::= INCLUDE raw_code_line.
 
-package_name ::= PACKAGE word(A). { set_package_name(A); }
+package_name ::= PACKAGE word(A). { set_package_name(*A); }
 
 import ::= IMPORT raw_code_line.
 
@@ -78,17 +78,17 @@ access ::= ACCESS raw_code_line.
 
 raw_code_line ::= RAW_CODE_LINE.
 
-map ::= MAP word(A) MAP_BEGIN states(B) MAP_END. { define_map(A, B); }
+map ::= MAP word(A) MAP_BEGIN states(B) MAP_END. { define_map(*A, *B); }
 
-states(X) ::= state(A) states(B). { X = add_state(A, B); }
+states(X) ::= state(A) states(B). { if (B) { X = B; B = NULL; } else { X = new state_list_t(); } X->push_back(*A); }
 states ::= .
 
-state(X) ::= word(A) entry(B) exit(C) BLOCK_BEGIN transitions(D) BLOCK_END. { X = create_state(A, B, C, D); }
+state(X) ::= word(A) entry(B) exit(C) BLOCK_BEGIN transitions(D) BLOCK_END. { X = new state(A, B, C, D); }
 
-transitions(X) ::= transition(A) transitions(B). { X = add_transition(A, B); }
+transitions(X) ::= transition(A) transitions(B). { if (B) { X = B; B = NULL; } else { X = new transition_list_t(); } (*X)[A->get_transition_name()].push_front(*A); }
 transitions ::= .
 
-transition(X) ::= word(A) transition_args guard(C) next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = create_transition(A, C, D, E); }
+transition(X) ::= word(A) transition_args guard(C) next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = new transition_t(A, C, D, E); }
 
 transition_args ::= PARENTHESIS_BEGIN parameters PARENTHESIS_END.
 transition_args ::= .
@@ -104,7 +104,7 @@ guard ::= .
 next_state(X) ::= word(A). { X = A; A = NULL; }
 next_state ::= NIL.
 
-actions(X) ::= action(A) actions(B). { X = add_action(A, B); }
+actions(X) ::= action(A) actions(B). { if (B) { X = B; B = NULL; } else { X = new action_list_t(); } X->push_back(*A); }
 actions ::= .
 
 action(X) ::= word(A) PARENTHESIS_BEGIN arguments PARENTHESIS_END SEMICOLON. { X = A; A = NULL; }
@@ -118,10 +118,10 @@ entry ::= .
 exit(X) ::= EXIT BLOCK_BEGIN actions(A) BLOCK_END. { X = A; A = NULL; }
 exit ::= .
 
-raw_code(X) ::= RAW_CODE(A) raw_code(B). { X = add_string(A, B); }
+raw_code(X) ::= RAW_CODE(A) raw_code(B). { if (B) { X = B; B = NULL; } else { X = new std::string(); } *X += *(A->text); }
 raw_code ::= .
 
-word(X) ::= WORD(A). { X = create_string(A); }
+word(X) ::= WORD(A). { X = new std::string(*(A->text)); }
 
 comment1 ::= COMMENT1_BEGIN COMMENT1_BODY.
 

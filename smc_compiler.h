@@ -5,13 +5,18 @@
 #include <stdio.h>
 #endif
 
+#include <string>
+#include <memory>
+#include <vector>
+#include <map>
+#include <deque>
+
 typedef struct context_tag {
 } context_t;
 
-typedef struct token_tag {
-    char *text;
-    int size;
-} token_t;
+struct token_t {
+    std::unique_ptr<std::string> text;
+};
 
 int get_token(context_t *context, token_t *token);
 
@@ -30,31 +35,69 @@ void Parse(
 void ParseTrace(FILE *stream, char *zPrefix);
 #endif
 
-token_t *dup_token(token_t *token);
-void destroy_token(token_t *token);
-char *get_token_text(token_t *token);
+typedef std::vector<std::string> action_list_t;
 
-void *create_string(token_t *token);
-void destroy_string(void *str);
-void *add_string(token_t *token, void *str);
+class transition_t {
+    std::string transition_name_, guard_, next_state_;
+    action_list_t action_list_;
 
-void *create_state(void *state_name, void *entry, void *exit, void *transitions);
-void destroy_state(void *state);
+public:
+    transition_t(std::string *transition_name, std::string *guard, std::string *next_state, action_list_t *action_list)
+    :   transition_name_(transition_name ? *transition_name : "")
+    ,   guard_(guard ? *guard : "")
+    ,   next_state_(next_state ? *next_state : "")
+    ,   action_list_(action_list ? *action_list : action_list_t())
+    {
+    }
 
-void *add_state(void *state, void *states);
-void destroy_states(void *states);
+    std::string get_transition_name() const { return transition_name_; }
+    std::string get_guard() const { return guard_; }
+    std::string get_next_state() const { return next_state_; }
+    action_list_t get_action_list() const { return action_list_; }
+};
 
-void *add_action(void *action, void *actions);
-void destroy_actions(void *actions);
+typedef std::map<std::string, std::deque<transition_t>> transition_list_t;
 
-void define_map(void *word, void *states);
+class state {
+    std::string state_name_;
+    action_list_t entry_, exit_;
+    transition_list_t transitions_;
 
-void *create_transition(void *action_name, void *guard, void *next_state, void *actions);
-void destroy_transition(void *transition);
-void *add_transition(void *transition, void *transitions);
+public:
+    state(std::string *state_name, action_list_t *entry, action_list_t *exit, transition_list_t *transitions)
+    :   state_name_(*state_name)
+    ,   entry_(entry ? *entry : action_list_t())
+    ,   exit_(exit ? *exit : action_list_t())
+    ,   transitions_(transitions ? *transitions : transition_list_t())
+    {
+    }
 
-void destroy_transitions(void *transitions);
+    std::string get_state_name() const { return state_name_; }
+    action_list_t get_entry() const { return entry_; }
+    action_list_t get_exit() const { return exit_; }
+    transition_list_t get_transitions() const { return transitions_; }
+};
 
-void set_start(void *map, void *state);
-void set_fsmclass(void *fsmclass);
-void set_package_name(void *package_name);
+typedef std::vector<state> state_list_t;
+
+class state_map_t
+{
+    std::string state_map_name_;
+    state_list_t state_list_;
+
+public:
+    state_map_t(std::string const& state_map_name, state_list_t const& state_list)
+    :   state_map_name_(state_map_name)
+    ,   state_list_(state_list)
+    {
+    }
+
+    std::string get_state_map_name() const { return state_map_name_; }
+    state_list_t get_state_list() const { return state_list_; }
+};
+
+void set_start(std::string const&, std::string const&);
+void set_fsmclass(std::string const&);
+void set_package_name(std::string const&);
+void define_map(std::string const&, std::string const&);
+void define_map(std::string const& word, state_list_t const& states);

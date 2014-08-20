@@ -132,7 +132,6 @@ WORD    [A-Za-z][A-Za-z0-9_.]*|_[A-Za-z][A-Za-z0-9_.]*
 int get_token(context_t *context, token_t *token)
 {
     int token_id = yylex();
-    token->text = yytext;
-    token->size = yyleng;
+    token->text.reset(new std::string(yytext));
     return token_id;
 }
