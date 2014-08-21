@@ -20,7 +20,7 @@ public:
 
     std::ostream& operator<<(const char *str)
     {
-        do_indent();
+        if (*str) do_indent();
         out_ << str;
 
         return out_;
@@ -28,7 +28,7 @@ public:
 
     std::ostream& operator<<(std::string const& str)
     {
-        do_indent();
+        if ( !str.empty()) do_indent();
         out_ << str;
 
         return out_;

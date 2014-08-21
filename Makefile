@@ -4,7 +4,7 @@ CC=gcc
 CXX=g++
 CFLAGS=-I.
 CXXFLAGS=-I.
-DEPS = smc_compiler.h smc_compiler_parser.h
+DEPS = smc_compiler.h smc_compiler_parser.h gen.h
 
 # Disable built-in rules.
 # See

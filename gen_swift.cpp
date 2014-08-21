@@ -5,7 +5,7 @@
 
 using namespace std;
 
-static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name);
+static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::set<string> const& action_set, transition_set_t const& transition_set);
 
 void gen_swift(std::string const& package_name, std::string const& fsmclass, state_map_list_t const& state_map_list, std::string const& start_map, std::string const& start_state, transition_set_t const& transition_set, std::string const& class_name, std::set<string> const& action_set)
 {
@@ -30,25 +30,31 @@ void gen_swift(std::string const& package_name, std::string const& fsmclass, sta
     }
     cout << "}\n";
 
+    cout << "public class " << class_name << " : " << package_name << "_Action {\n";
+    for (auto const& action : action_set) {
+        cout << "    public func " << action << "() {}\n";
+    }
+    cout << "}\n";
+
     cout
         << "\n"
         << "public class " << full_fsm_name << " {\n"
         << "\n"
-        << "    var currentState : _ButtonStateMap.State?\n"
-        << "    var previousState : _ButtonStateMap.State?\n"
+        << "    private var currentState : " << package_name << "_ButtonStateMap_State?\n"
+        << "    private var previousState : " << package_name << "_ButtonStateMap_State?\n"
         << "    public var debugMode = false\n"
         << "    let ctxt : " << class_name << "\n"
         << "\n"
-        << "    public func init(ctxt:" << class_name << ") {\n"
-        << "        self.currentState = " << start_map << "." << start_state << "()\n"
+        << "    public init(ctxt:" << class_name << ") {\n"
+        << "        self.currentState = _" << package_name << "_" << start_map << "." << start_state << "()\n"
         << "        self.ctxt = ctxt\n"
         << "    }\n"
         << "\n"
         << "    public func enterStartState() {\n"
-        << "        currentState.Entry(self, ctxt)\n"
+        << "        currentState!.Entry(self, ctxt: ctxt)\n"
         << "    }\n"
         << "\n"
-        << "    private func setState(state:_ButtonStateMap.State) {\n"
+        << "    private func setState(state:" << package_name << "_ButtonStateMap_State) {\n"
         << "        currentState = state;\n"
         << "        if (debugMode) {\n"
         << "            NSLog(\"ENTER STATE: %s\", state.getName())\n"
@@ -59,7 +65,7 @@ void gen_swift(std::string const& package_name, std::string const& fsmclass, sta
     for (auto&& transition_name : transition_set) {
         cout << "\n";
         cout << "    public func " << transition_name << "() {\n";
-        cout << "        currentState." << transition_name << "(self, ctxt)\n";
+        cout << "        currentState!." << transition_name << "(self, ctxt: ctxt)\n";
         cout << "    }\n";
     }
 
@@ -70,12 +76,12 @@ void gen_swift(std::string const& package_name, std::string const& fsmclass, sta
     cout << "\n";
 
     for (auto&& state_map : state_map_list) {
-        generate_state_map(state_map, package_name, fsmclass, class_name);
+        generate_state_map(state_map, package_name, fsmclass, class_name, action_set, transition_set);
     }
 }
 
 
-static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name)
+static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::set<string> const& action_set, transition_set_t const& transition_set)
 {
     string full_fsm_name = package_name + "_" + fsmclass;
 
@@ -89,7 +95,7 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
 
         // 遷移先のステートがある場合には Exit() を出力する。
         if ( !transition.get_next_state().empty()) {
-            out << "fsm.currentState.Exit(fsm, ctxt)\n";
+            out << "fsm.currentState!.Exit(fsm, ctxt: ctxt)\n";
         }
 
         // 現在のステートをNULLにセットする。
@@ -97,13 +103,13 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
 
         // カスタムアクションを出力する。
         if ( !transition.get_action_list().empty()) {
-            out << "fsm.currentState = null\n";
+            out << "fsm.currentState = nil\n";
             out << "//try {" << "\n";
-            out << "    // Custom action" << "\n";
+            out << "// Custom action" << "\n";
         }
 
         for (auto const& action : transition.get_action_list()) {
-            out << "    ctxt." << action << "()\n";
+            out << "ctxt." << action << "()\n";
         }
 
         // 次の遷移先への移動をfinally区の中に入れるかどうか
@@ -111,7 +117,7 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
 
         if ( !transition.get_action_list().empty()) {
             out << "//} finally {" << "\n";
-            next_state_indent++;
+            //next_state_indent++;
         }
 
         // 遷移先のステートがある場合には Entry() を出力する。
@@ -119,8 +125,8 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
              out(next_state_indent) << "fsm.currentState = previousState\n";
         }
         else {
-             out(next_state_indent) << "fsm.setState(" << state_map_name << "." << transition.get_next_state() << ")\n";
-             out(next_state_indent) << "fsm.currentState.Entry()\n";
+             out(next_state_indent) << "fsm.setState(" << state_map_name << "._" << transition.get_next_state() << ")\n";
+             out(next_state_indent) << "fsm.currentState!.Entry(fsm, ctxt: ctxt)\n";
         }
 
         if ( !transition.get_action_list().empty()) {
@@ -128,25 +134,54 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
         }
     };
 
+    cout << "private protocol " << state_map_name << "_State {\n";
+    cout << "    func getName() -> String\n";
+    cout << "    func Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ")\n";
+    cout << "    func Exit(fsm:" << full_fsm_name << ", ctxt:" << class_name << ")\n";
+    for (auto&& transition_name : transition_set) {
+        cout << "    func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << ")\n";
+    }
+    cout << "}\n";
+
     intented_out out(cout, 0);
     bool need_comma = false;
-    out << "let = " << state_map_name << " = _" << state_map_name << "()\n"
-        << "\n";
-    out << "public class _" << state_map_name << " : StateMap {\n";
+    out << "let " << state_map_name << " = _" << state_map_name << "()\n";
+    cout << "\n";
+    out << "public class _" << state_map_name << " {\n";
+    for (auto const& state : state_list) {
+        cout << "    let _" << state.get_state_name() << " = " << state.get_state_name() << "()\n";
+    }
+
+
+
+    cout << "\n";
+    out(1) << "public class DefaultState : " << state_map_name << "_State {\n";
+    out(2) << "public func getName() -> String { return \"DefaultState\"; }\n\n";
+    out(2) << "public func Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
+    out(2) << "public func Exit(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
+
+    for (auto&& transition_name : transition_set) {
+         out(2) << "public func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
+    }
+    out(1) << "}\n";
+    cout << "\n";
+
+
+
     for (auto const& state : state_list) {
         if (need_comma) cout << "\n";
 
         cout << "\n";
-        out(1) << "public class " << state.get_state_name() << " : State {\n";
-        out(2) << "public func getName() -> String { return \"" << state.get_state_name() << "\"; }\n\n";
-        out(2) << "public func Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
+        out(1) << "public class " << state.get_state_name() << " : DefaultState {\n";
+        out(2) << "override public func getName() -> String { return \"" << state.get_state_name() << "\"; }\n\n";
+        out(2) << "override public func Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
 
         for (auto&& action : state.get_entry()) {
              out(3) << "ctxt." << action << "()\n";
         }
         out(2) << "}\n";
-        out << "\n";
-        out(2) << "public func Exit(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
+        cout << "\n";
+        out(2) << "override public func Exit(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
              ;
         for (auto const& action : state.get_exit()) {
              out(3) << "ctxt." << action << "()\n";
@@ -157,7 +192,7 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
             string const& transition_name = transition_name_list_pair.first;
 
             cout << "\n";
-            out(2) << "public func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
+            out(2) << "override public func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
 
             bool else_block = false;
             for (auto&& transition : transition_name_list_pair.second) {
