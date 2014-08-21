@@ -88,7 +88,7 @@ state(X) ::= word(A) entry(B) exit(C) BLOCK_BEGIN transitions(D) BLOCK_END. { X 
 transitions(X) ::= transition(A) transitions(B). { if (B) { X = B; B = NULL; } else { X = new transition_list_t(); } (*X)[A->get_transition_name()].push_front(*A); }
 transitions ::= .
 
-transition(X) ::= word(A) transition_args guard(C) next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = new transition_t(A, C, D, E); }
+transition(X) ::= word(A) transition_args guard(C) next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = new transition_t(A, C, D, E); define_transition(*A); }
 
 transition_args ::= PARENTHESIS_BEGIN parameters PARENTHESIS_END.
 transition_args ::= .

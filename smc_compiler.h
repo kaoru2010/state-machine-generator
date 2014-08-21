@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <set>
 #include <deque>
 
 typedef struct context_tag {
@@ -35,7 +36,8 @@ void Parse(
 void ParseTrace(FILE *stream, char *zPrefix);
 #endif
 
-typedef std::vector<std::string> action_list_t;
+using transition_set_t = std::set<std::string>;
+using action_list_t = std::vector<std::string>;
 
 class transition_t {
     std::string transition_name_, guard_, next_state_;
@@ -56,7 +58,7 @@ public:
     action_list_t get_action_list() const { return action_list_; }
 };
 
-typedef std::map<std::string, std::deque<transition_t>> transition_list_t;
+using transition_list_t = std::map<std::string, std::deque<transition_t>>;
 
 class state {
     std::string state_name_;
@@ -78,7 +80,7 @@ public:
     transition_list_t get_transitions() const { return transitions_; }
 };
 
-typedef std::vector<state> state_list_t;
+using state_list_t = std::vector<state>;
 
 class state_map_t
 {
@@ -96,8 +98,11 @@ public:
     state_list_t get_state_list() const { return state_list_; }
 };
 
+using state_map_list_t = std::vector<state_map_t>;
+
 void set_start(std::string const&, std::string const&);
 void set_fsmclass(std::string const&);
 void set_package_name(std::string const&);
 void define_map(std::string const&, std::string const&);
 void define_map(std::string const& word, state_list_t const& states);
+void define_transition(std::string const& transition);
