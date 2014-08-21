@@ -60,7 +60,7 @@ raw_source_body ::= .
 
 start_state ::= START word(A) DOUBLE_COLON word(B). { set_start(*A, *B); }
 
-class_name ::= CLASS word.
+class_name ::= CLASS word(A). { set_class_name(*A); }
 
 fsmclass_name ::= FSMCLASS word(A). { set_fsmclass(*A); }
 
@@ -107,7 +107,7 @@ next_state ::= NIL.
 actions(X) ::= action(A) actions(B). { if (B) { X = B; B = NULL; } else { X = new action_list_t(); } X->push_back(*A); }
 actions ::= .
 
-action(X) ::= word(A) PARENTHESIS_BEGIN arguments PARENTHESIS_END SEMICOLON. { X = A; A = NULL; }
+action(X) ::= word(A) PARENTHESIS_BEGIN arguments PARENTHESIS_END SEMICOLON. { define_action(*A); X = A; A = NULL; }
 
 arguments ::= raw_code COMMA arguments.
 arguments ::= raw_code.

@@ -7,7 +7,7 @@ using namespace std;
 
 static void generate_state_map(state_map_t const& state_map);
 
-void gen_javascript(std::string const& package_name, std::string const& fsmclass, state_map_list_t const& state_map_list, std::string const& start_map, std::string const& start_state, transition_set_t const& transition_set)
+void gen_javascript(std::string const& package_name, std::string const& fsmclass, state_map_list_t const& state_map_list, std::string const& start_map, std::string const& start_state, transition_set_t const& transition_set, std::string const& class_name)
 {
     intented_out out(cout, 0);
 

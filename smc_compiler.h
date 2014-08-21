@@ -103,6 +103,8 @@ using state_map_list_t = std::vector<state_map_t>;
 void set_start(std::string const&, std::string const&);
 void set_fsmclass(std::string const&);
 void set_package_name(std::string const&);
+void set_class_name(std::string const&);
 void define_map(std::string const&, std::string const&);
 void define_map(std::string const& word, state_list_t const& states);
 void define_transition(std::string const& transition);
+void define_action(std::string const& action);
