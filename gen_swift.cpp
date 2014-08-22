@@ -7,7 +7,7 @@ using namespace std;
 
 static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::set<string> const& action_set, transition_set_t const& transition_set);
 
-void gen_swift(std::string const& package_name, std::string const& fsmclass, state_map_list_t const& state_map_list, std::string const& start_map, std::string const& start_state, transition_set_t const& transition_set, std::string const& class_name, std::set<string> const& action_set)
+void gen_swift(std::string const& package_name, std::string const& fsmclass, state_map_list_t const& state_map_list, std::string const& start_map, std::string const& start_state, transition_set_t const& transition_set, std::string const& class_name, std::set<std::string> const& action_set, std::vector<std::string> const& include_list, std::vector<std::string> const& import_list)
 {
     string full_fsm_name = package_name + "_" + fsmclass;
 
@@ -19,10 +19,16 @@ void gen_swift(std::string const& package_name, std::string const& fsmclass, sta
     cout << "//\n";
     cout << "\n";
 
-    cout
-        << "import Foundation\n"
-        << "\n"
-        ;
+    cout << "import Foundation\n";
+
+    for (auto&& include : include_list) {
+        cout << "// #include <" << include << ">\n";
+    }
+
+    for (auto&& import: import_list) {
+        cout << "import " << import << "\n";
+    }
+    cout << "\n";
 
     cout << "public protocol " << package_name << "_Action {\n";
     for (auto const& action : action_set) {
@@ -40,13 +46,13 @@ void gen_swift(std::string const& package_name, std::string const& fsmclass, sta
         << "\n"
         << "public class " << full_fsm_name << " {\n"
         << "\n"
-        << "    private var currentState : " << package_name << "_ButtonStateMap_State?\n"
-        << "    private var previousState : " << package_name << "_ButtonStateMap_State?\n"
+        << "    private var currentState : " << package_name << "_" << start_map << "_State?\n"
+        << "    private var previousState : " << package_name << "_" << start_map << "_State?\n"
         << "    public var debugMode = false\n"
         << "    let ctxt : " << class_name << "\n"
         << "\n"
         << "    public init(context:" << class_name << ") {\n"
-        << "        self.currentState = _" << package_name << "_" << start_map << "._" << start_state << "\n"
+        << "        self.currentState = " << package_name << "_" << start_map << "._" << start_state << "\n"
         << "        self.ctxt = context\n"
         << "    }\n"
         << "\n"
@@ -54,7 +60,7 @@ void gen_swift(std::string const& package_name, std::string const& fsmclass, sta
         << "        currentState!.Entry(self, ctxt: ctxt)\n"
         << "    }\n"
         << "\n"
-        << "    private func setState(state:" << package_name << "_ButtonStateMap_State) {\n"
+        << "    private func setState(state:" << package_name << "_" << start_map << "_State) {\n"
         << "        currentState = state;\n"
         << "        if (debugMode) {\n"
         << "            NSLog(\"ENTER STATE: %s\", state.getName())\n"
@@ -122,7 +128,7 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
 
         // 遷移先のステートがある場合には Entry() を出力する。
         if (transition.get_next_state().empty()) {
-             out(next_state_indent) << "fsm.currentState = previousState\n";
+             out(next_state_indent) << "fsm.currentState = fsm.previousState\n";
         }
         else {
              out(next_state_indent) << "fsm.setState(" << state_map_name << "._" << transition.get_next_state() << ")\n";

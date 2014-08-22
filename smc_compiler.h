@@ -108,3 +108,5 @@ void define_map(std::string const&, std::string const&);
 void define_map(std::string const& word, state_list_t const& states);
 void define_transition(std::string const& transition);
 void define_action(std::string const& action);
+void add_import(std::string const& import);
+void add_include(std::string const& include);

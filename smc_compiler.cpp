@@ -54,6 +54,18 @@ void define_action(std::string const& action)
     g_action_set.insert(action);
 }
 
+vector<string> g_import_list;
+void add_import(std::string const& import)
+{
+    g_import_list.push_back(import);
+}
+
+vector<string> g_include_list;
+void add_include(std::string const& include)
+{
+    g_include_list.push_back(include);
+}
+
 int main(int argc, const char *argv[])
 {
     context_t context = {};
@@ -78,7 +90,7 @@ int main(int argc, const char *argv[])
     ParseFree(parser, free);
 
     if (argc == 2 && strcmp(argv[1], "--swift") == 0) {
-        gen_swift(g_package_name, g_fsmclass, g_state_map_list, g_start_map, g_start_state, g_transition_set, g_class_name, g_action_set);
+        gen_swift(g_package_name, g_fsmclass, g_state_map_list, g_start_map, g_start_state, g_transition_set, g_class_name, g_action_set, g_include_list, g_import_list);
     }
     else {
         gen_javascript(g_package_name, g_fsmclass, g_state_map_list, g_start_map, g_start_state, g_transition_set, g_class_name);

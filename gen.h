@@ -4,7 +4,7 @@
 #include <set>
 #include "smc_compiler.h"
 
-void gen_swift(std::string const& package_name, std::string const& fsmclass, state_map_list_t const& state_map_list, std::string const& start_map, std::string const& start_state, transition_set_t const& transition_set, std::string const& class_name, std::set<std::string> const& action_set);
+void gen_swift(std::string const& package_name, std::string const& fsmclass, state_map_list_t const& state_map_list, std::string const& start_map, std::string const& start_state, transition_set_t const& transition_set, std::string const& class_name, std::set<std::string> const& action_set, std::vector<std::string> const& include_list, std::vector<std::string> const& import_list);
 void gen_javascript(std::string const& package_name, std::string const& fsmclass, state_map_list_t const& state_map_list, std::string const& start_map, std::string const& start_state, transition_set_t const& transition_set, std::string const& class_name);
 
 class intented_out

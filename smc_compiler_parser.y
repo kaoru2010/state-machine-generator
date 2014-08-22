@@ -11,6 +11,7 @@
 
 %type guard { std::string * }
 %type raw_code { std::string * }
+%type raw_code_line { std::string * }
 %type entry { action_list_t * }
 %type exit { action_list_t * }
 %type word { std::string * }
@@ -23,6 +24,7 @@
 %type actions { action_list_t * }
 %destructor guard { delete $$; }
 %destructor raw_code { delete $$; }
+%destructor raw_code_line { delete $$; }
 %destructor entry { delete $$; }
 %destructor exit { delete $$; }
 %destructor word { delete $$; }
@@ -66,17 +68,17 @@ fsmclass_name ::= FSMCLASS word(A). { set_fsmclass(*A); }
 
 header_file ::= HEADER raw_code_line.
 
-include_file ::= INCLUDE raw_code_line.
+include_file ::= INCLUDE raw_code_line(A). { add_include(*A); }
 
 package_name ::= PACKAGE word(A). { set_package_name(*A); }
 
-import ::= IMPORT raw_code_line.
+import ::= IMPORT raw_code_line(A). { add_import(*A); }
 
 declare ::= DECLARE raw_code_line.
 
 access ::= ACCESS raw_code_line.
 
-raw_code_line ::= RAW_CODE_LINE.
+raw_code_line(X) ::= RAW_CODE_LINE(A). { X = new std::string(*(A->text)); }
 
 map ::= MAP word(A) MAP_BEGIN states(B) MAP_END. { define_map(*A, *B); }
 
