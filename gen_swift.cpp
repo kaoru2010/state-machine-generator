@@ -30,11 +30,11 @@ void gen_swift(std::string const& package_name, std::string const& fsmclass, sta
     }
     cout << "}\n";
 
-    cout << "public class " << class_name << " : " << package_name << "_Action {\n";
+    cout << "//public class " << class_name << " : " << package_name << "_Action {\n";
     for (auto const& action : action_set) {
-        cout << "    public func " << action << "() {}\n";
+        cout << "//    public func " << action << "() {}\n";
     }
-    cout << "}\n";
+    cout << "//}\n";
 
     cout
         << "\n"
@@ -45,9 +45,9 @@ void gen_swift(std::string const& package_name, std::string const& fsmclass, sta
         << "    public var debugMode = false\n"
         << "    let ctxt : " << class_name << "\n"
         << "\n"
-        << "    public init(ctxt:" << class_name << ") {\n"
-        << "        self.currentState = _" << package_name << "_" << start_map << "." << start_state << "()\n"
-        << "        self.ctxt = ctxt\n"
+        << "    public init(context:" << class_name << ") {\n"
+        << "        self.currentState = _" << package_name << "_" << start_map << "._" << start_state << "\n"
+        << "        self.ctxt = context\n"
         << "    }\n"
         << "\n"
         << "    public func enterStartState() {\n"
