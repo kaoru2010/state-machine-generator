@@ -156,7 +156,7 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
 
     cout << "\n";
     out(1) << "public class DefaultState : " << state_map_name << "_State {\n";
-    out(2) << "public func getName() -> String { return \"DefaultState\"; }\n\n";
+    out(2) << "public func getName() -> String { return \"DefaultState\" }\n\n";
     out(2) << "public func Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
     out(2) << "public func Exit(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
 
@@ -173,7 +173,7 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
 
         cout << "\n";
         out(1) << "public class " << state.get_state_name() << " : DefaultState {\n";
-        out(2) << "override public func getName() -> String { return \"" << state.get_state_name() << "\"; }\n\n";
+        out(2) << "override public func getName() -> String { return \"" << state.get_state_name() << "\" }\n\n";
         out(2) << "override public func Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
 
         for (auto&& action : state.get_entry()) {
