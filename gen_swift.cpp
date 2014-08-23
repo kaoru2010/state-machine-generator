@@ -160,25 +160,15 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
 
 
 
-    cout << "\n";
-    out(1) << "public class DefaultState : " << state_map_name << "_State {\n";
-    out(2) << "public func getName() -> String { return \"DefaultState\" }\n\n";
-    out(2) << "public func Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
-    out(2) << "public func Exit(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
-
-    for (auto&& transition_name : transition_set) {
-         out(2) << "public func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
-    }
-    out(1) << "}\n";
-    cout << "\n";
-
-
+    bool default_state_present = false;
 
     for (auto const& state : state_list) {
-        if (need_comma) cout << "\n";
+        bool default_state = state.get_state_name() == "Default";
+        if (default_state)
+            default_state_present = true;
 
         cout << "\n";
-        out(1) << "public class " << state.get_state_name() << " : DefaultState {\n";
+        out(1) << "public class " << state.get_state_name() << " : "<< (default_state ? state_map_name + "_State" : "Default") << " {\n";
         out(2) << "override public func getName() -> String { return \"" << state.get_state_name() << "\" }\n\n";
         out(2) << "override public func Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
 
@@ -230,6 +220,19 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
         out(1) << "}\n"
              ;
         need_comma = true;
+    }
+
+    if ( !default_state_present) {
+        cout << "\n";
+        out(1) << "public class Default : " << state_map_name << "_State {\n";
+        out(2) << "public func getName() -> String { return \"DefaultState\" }\n\n";
+        out(2) << "public func Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
+        out(2) << "public func Exit(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
+
+        for (auto&& transition_name : transition_set) {
+             out(2) << "public func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {}\n";
+        }
+        out(1) << "}\n";
     }
 
     cout << "}" << endl;
