@@ -2,7 +2,7 @@
 %option stack
 %x raw_source
 %x expect_word raw_code_line
-%x in_map map_state_def map_raw_code map_arguments map_transition map_actions
+%x in_map map_state_def map_raw_code map_arguments map_transition map_actions map_action_argument map_argument_type
 %x comment1
 %x comment2
 
@@ -102,18 +102,29 @@ WORD    [A-Za-z][A-Za-z0-9_.]*|_[A-Za-z][A-Za-z0-9_.]*
     "{" return BLOCK_BEGIN;
     ";" return SEMICOLON;
     {WORD} return WORD;
-    "(" yy_push_state(map_arguments); return PARENTHESIS_BEGIN;
+    "(" yy_push_state(map_action_argument); return PARENTHESIS_BEGIN;
     "}" yy_pop_state(); return BLOCK_END;
     . printf("unmatched: %s\n", yytext);
 }
 
+<map_action_argument>{
+    [^)]+ return RAW_CODE;
+    ")" yy_pop_state(); return PARENTHESIS_END;
+}
+
 <map_arguments>{
-    [ \t]+ ;
-    ":" return COLON;
+    [ \t\n]+ ;
+    ":" yy_push_state(map_argument_type); return COLON;
     "," return COMMA;
     ")" yy_pop_state(); return PARENTHESIS_END;
     {WORD} return WORD;
-    [^,)] return RAW_CODE;
+    . printf("unmatched: %s\n", yytext);
+}
+
+<map_argument_type>{
+    [^,)]+ yy_pop_state(); return RAW_CODE;
+    \n ;
+    ","|")" printf("missing argument type: %s\n", yytext);
 }
 
 <comment1>{

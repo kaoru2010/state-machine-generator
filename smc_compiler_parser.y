@@ -93,10 +93,11 @@ transitions ::= .
 transition(X) ::= word(A) transition_args guard(C) next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = new transition_t(A, C, D, E); define_transition(*A); }
 
 transition_args ::= PARENTHESIS_BEGIN parameters PARENTHESIS_END.
+transition_args ::= PARENTHESIS_BEGIN PARENTHESIS_END.
 transition_args ::= .
 
 parameters ::= parameter COMMA parameters.
-parameters ::= .
+parameters ::= parameter.
 
 parameter ::= word COLON raw_code.
 
