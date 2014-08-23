@@ -20,8 +20,9 @@
 %type states { state_list_t * }
 %type transition { transition_t * }
 %type transitions { transition_list_t * }
-%type action { std::string * }
+%type action { action_t * }
 %type actions { action_list_t * }
+%type arguments { std::string * }
 %destructor guard { delete $$; }
 %destructor raw_code { delete $$; }
 %destructor raw_code_line { delete $$; }
@@ -35,6 +36,7 @@
 %destructor transitions { delete $$; }
 %destructor action { delete $$; }
 %destructor actions { delete $$; }
+%destructor arguments { delete $$; }
 
 fsm ::= fsm_tokens.
 
@@ -110,10 +112,10 @@ next_state ::= NIL.
 actions(X) ::= action(A) actions(B). { if (B) { X = B; B = NULL; } else { X = new action_list_t(); } X->push_back(*A); }
 actions ::= .
 
-action(X) ::= word(A) PARENTHESIS_BEGIN arguments PARENTHESIS_END SEMICOLON. { define_action(*A); X = A; A = NULL; }
+action(X) ::= word(A) PARENTHESIS_BEGIN arguments(B) PARENTHESIS_END SEMICOLON. { define_action(*A, B ? *B : ""); X = new action_t(*A, B ? *B : ""); }
 
-arguments ::= raw_code COMMA arguments.
-arguments ::= raw_code.
+//arguments ::= raw_code COMMA arguments.
+arguments(X) ::= raw_code(A). { X = A; A = NULL; }
 
 entry(X) ::= ENTRY BLOCK_BEGIN actions(A) BLOCK_END. { X = A; A = NULL; }
 entry ::= .

@@ -5,9 +5,19 @@
 
 using namespace std;
 
-static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::set<string> const& action_set, transition_set_t const& transition_set);
+static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::map<string, string> const& action_map, transition_set_t const& transition_set);
 
-void gen_swift(std::string const& package_name, std::string const& fsmclass, state_map_list_t const& state_map_list, std::string const& start_map, std::string const& start_state, transition_set_t const& transition_set, std::string const& class_name, std::set<std::string> const& action_set, std::vector<std::string> const& include_list, std::vector<std::string> const& import_list)
+void gen_swift(
+    std::string const& package_name,
+    std::string const& fsmclass,
+    state_map_list_t const& state_map_list,
+    std::string const& start_map,
+    std::string const& start_state,
+    transition_set_t const& transition_set,
+    std::string const& class_name,
+    std::map<std::string, std::string> const& action_map,
+    std::vector<std::string> const& include_list,
+    std::vector<std::string> const& import_list)
 {
     string full_fsm_name = package_name + "_" + fsmclass;
 
@@ -31,14 +41,14 @@ void gen_swift(std::string const& package_name, std::string const& fsmclass, sta
     cout << "\n";
 
     cout << "public protocol " << package_name << "_Action {\n";
-    for (auto const& action : action_set) {
-        cout << "    func " << action << "()\n";
+    for (auto const& action : action_map) {
+        cout << "    func " << action.second << "\n";
     }
     cout << "}\n";
 
     cout << "//public class " << class_name << " : " << package_name << "_Action {\n";
-    for (auto const& action : action_set) {
-        cout << "//    public func " << action << "() {}\n";
+    for (auto const& action : action_map) {
+        cout << "//    public func " << action.second << " {}\n";
     }
     cout << "//}\n";
 
@@ -82,12 +92,12 @@ void gen_swift(std::string const& package_name, std::string const& fsmclass, sta
     cout << "\n";
 
     for (auto&& state_map : state_map_list) {
-        generate_state_map(state_map, package_name, fsmclass, class_name, action_set, transition_set);
+        generate_state_map(state_map, package_name, fsmclass, class_name, action_map, transition_set);
     }
 }
 
 
-static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::set<string> const& action_set, transition_set_t const& transition_set)
+static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::map<string, string> const& action_map, transition_set_t const& transition_set)
 {
     string full_fsm_name = package_name + "_" + fsmclass;
 
@@ -115,7 +125,7 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
         }
 
         for (auto const& action : transition.get_action_list()) {
-            out << "ctxt." << action << "()\n";
+            out << "ctxt." << action.func() << "\n";
         }
 
         // 次の遷移先への移動をfinally区の中に入れるかどうか
@@ -173,14 +183,14 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
         out(2) << "override public func Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
 
         for (auto&& action : state.get_entry()) {
-             out(3) << "ctxt." << action << "()\n";
+             out(3) << "ctxt." << action.func() << "\n";
         }
         out(2) << "}\n";
         cout << "\n";
         out(2) << "override public func Exit(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
              ;
         for (auto const& action : state.get_exit()) {
-             out(3) << "ctxt." << action << "()\n";
+             out(3) << "ctxt." << action.func() << "\n";
         }
         out(2) << "}\n";
 

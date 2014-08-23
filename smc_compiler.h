@@ -37,7 +37,22 @@ void ParseTrace(FILE *stream, char *zPrefix);
 #endif
 
 using transition_set_t = std::set<std::string>;
-using action_list_t = std::vector<std::string>;
+
+class action_t {
+    std::string action_, arguments_;
+
+public:
+    action_t(std::string const& action, std::string const& arguments)
+    :   action_(action)
+    ,   arguments_(arguments)
+    {}
+
+    std::string get_action() const { return action_; }
+    std::string get_arguments() const { return arguments_; }
+    std::string func() const { return action_ + "(" + arguments_ + ")"; }
+};
+
+using action_list_t = std::vector<action_t>;
 
 class transition_t {
     std::string transition_name_, guard_, next_state_;
@@ -107,6 +122,6 @@ void set_class_name(std::string const&);
 void define_map(std::string const&, std::string const&);
 void define_map(std::string const& word, state_list_t const& states);
 void define_transition(std::string const& transition);
-void define_action(std::string const& action);
+void define_action(std::string const& action, std::string const& arguments);
 void add_import(std::string const& import);
 void add_include(std::string const& include);
