@@ -44,7 +44,7 @@ void define_map(std::string const& word, state_list_t const& states) {
     g_state_map_list.emplace_back(word, states);
 }
 
-void define_transition(std::string const& transition)
+void define_transition(std::string const& transition, parameter_list_t *parameter_list)
 {
     g_transition_set.insert(transition);
 }

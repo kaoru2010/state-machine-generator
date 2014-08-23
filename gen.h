@@ -40,6 +40,8 @@ public:
         return intented_out(out_, indent_ + indent);
     }
 
+    int get_indent() const { return indent_; }
+
 private:
     void do_indent()
     {

@@ -131,14 +131,22 @@ static void generate_state_map(state_map_t const& state_map)
             string const& transition_name = transition_name_list_pair.first;
 
             cout << ",\n";
-            out(3) << transition_name << ": function() {\n";
+            out(3) << transition_name << ": function(";
+            bool first_parameter_seen = false;
+            for (auto&& parameter : transition_name_list_pair.second.at(0).get_parameter_list()) {
+                if (first_parameter_seen)
+                    cout << ", ";
+                cout << parameter.get_name();
+                first_parameter_seen = true;
+            }
+            cout << ") {\n";
 
             bool else_block = false;
             for (auto&& transition : transition_name_list_pair.second) {
                 if ( !transition.get_guard().empty()) {
                     out(4) << (else_block ? "else if" : "if") << " (" << transition.get_guard() << ") {\n";
 
-                    generate_transition(transition, 5);
+                    generate_transition(transition, out.get_indent() + 5);
 
                     out(4) << "}\n";
                     else_block = true;
@@ -148,7 +156,7 @@ static void generate_state_map(state_map_t const& state_map)
                         out(4) << "else {\n";
                     }
 
-                    generate_transition(transition, else_block ? 5 : 4);
+                    generate_transition(transition, out.get_indent() + (else_block ? 5 : 4));
 
                     if (else_block) {
                         out(4) << "}\n";
@@ -160,8 +168,7 @@ static void generate_state_map(state_map_t const& state_map)
         }
 
         cout << "\n";
-        cout << "    " << "    " << "}"
-             ;
+        out(2) << "}";
         need_comma = true;
     }
     cout << "\n"

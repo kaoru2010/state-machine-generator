@@ -23,6 +23,9 @@
 %type action { action_t * }
 %type actions { action_list_t * }
 %type arguments { std::string * }
+%type parameter { parameter_t * }
+%type parameters { parameter_list_t * }
+%type transition_args { parameter_list_t * }
 %destructor guard { delete $$; }
 %destructor raw_code { delete $$; }
 %destructor raw_code_line { delete $$; }
@@ -37,6 +40,9 @@
 %destructor action { delete $$; }
 %destructor actions { delete $$; }
 %destructor arguments { delete $$; }
+%destructor parameter { delete $$; }
+%destructor parameters { delete $$; }
+%destructor transition_args { delete $$; }
 
 fsm ::= fsm_tokens.
 
@@ -92,16 +98,16 @@ state(X) ::= word(A) entry(B) exit(C) BLOCK_BEGIN transitions(D) BLOCK_END. { X 
 transitions(X) ::= transition(A) transitions(B). { if (B) { X = B; B = NULL; } else { X = new transition_list_t(); } (*X)[A->get_transition_name()].push_front(*A); }
 transitions ::= .
 
-transition(X) ::= word(A) transition_args guard(C) next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = new transition_t(A, C, D, E); define_transition(*A); }
+transition(X) ::= word(A) transition_args(B) guard(C) next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = new transition_t(A, B, C, D, E); define_transition(*A, B); }
 
-transition_args ::= PARENTHESIS_BEGIN parameters PARENTHESIS_END.
+transition_args(X) ::= PARENTHESIS_BEGIN parameters(A) PARENTHESIS_END. { X = A; A = NULL; }
 transition_args ::= PARENTHESIS_BEGIN PARENTHESIS_END.
 transition_args ::= .
 
-parameters ::= parameter COMMA parameters.
-parameters ::= parameter.
+parameters(X) ::= parameter(A) COMMA parameters(B). { X = B; B = NULL; X->push_back(*A); }
+parameters(X) ::= parameter(A). { X = new parameter_list_t(); X->push_back(*A); }
 
-parameter ::= word COLON raw_code.
+parameter(X) ::= word(A) COLON raw_code(B). { X = new parameter_t(*A, B ? *B : ""); }
 
 guard(X) ::= CONDITION_BEGIN raw_code(A) CONDITION_END. { X = A; A = NULL; }
 guard ::= .
