@@ -198,7 +198,11 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
             string const& transition_name = transition_name_list_pair.first;
 
             cout << "\n";
-            out(2) << "override public func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
+            out(2) << "override public func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name;
+            for (auto&& parameter : transition_name_list_pair.second.at(0).get_parameter_list()) {
+                cout << ", " << parameter.get_name() << ":" << parameter.get_type();
+            }
+            cout << ") {\n";
 
             bool else_block = false;
             for (auto&& transition : transition_name_list_pair.second) {
