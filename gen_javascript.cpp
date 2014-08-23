@@ -106,9 +106,9 @@ static void generate_state_map(state_map_t const& state_map)
         }
     };
 
-    intented_out out(cout, 1);
+    intented_out out(cout, 0);
     bool need_comma = false;
-    out << "var " << state_map_name << " = {\n";
+    out(1) << "var " << state_map_name << " = {\n";
     for (auto const& state : state_list) {
         if (need_comma) cout << ",\n";
 
