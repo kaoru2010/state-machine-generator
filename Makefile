@@ -3,7 +3,7 @@ all: smc_compiler
 CC=gcc
 CXX=g++
 CFLAGS=-I.
-CXXFLAGS=-I.
+CXXFLAGS=-I. -std=c++11
 DEPS = smc_compiler.h smc_compiler_parser.h gen.h
 
 # Disable built-in rules.
