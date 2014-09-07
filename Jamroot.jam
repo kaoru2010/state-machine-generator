@@ -1,0 +1,21 @@
+import testing ;
+import os ;
+import flex ;
+import lemon ;
+
+use-project /boost : [ os.environ BOOST_ROOT ] ;
+
+exe smc_compiler
+    :
+    smc_compiler.cpp
+    smc_compiler_lexer.ll
+    smc_compiler_parser.yy
+    gen_javascript.cpp
+    gen_swift.cpp
+    :
+    <include>.
+    <threading>multi
+    <toolset>gcc:<cxxflags>-std=gnu++0x
+    <toolset>clang:<cxxflags>-std=c++11
+    ;
+

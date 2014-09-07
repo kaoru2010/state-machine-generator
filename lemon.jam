@@ -1,0 +1,22 @@
+import type ;
+import generators ;
+import path ;
+
+type.register Y : y ;
+type.register YY : yy ;
+
+generators.register-standard lemon.lemon : Y : C H ;
+generators.register-standard lemon.lemon : YY : CPP H ;
+
+rule lemon ( dst dst_header : src : properties * )
+{
+    ECHO $(dst) ;
+    ECHO $(dst_header) ;
+    ECHO $(src) ;
+}
+
+actions lemon
+{
+    cp $(>) $(<[0]:D)
+    ./lemon -X -p -s $(<[0]:S="")$(>:S)
+}
