@@ -29,7 +29,14 @@ void gen_javascript(std::string const& package_name, std::string const& fsmclass
     }
 
     out << "    currentState = " << start_map << "." << start_state << ";\n";
-    out << "    return {\n";
+    out << "    var defaultState = " << start_map << ".Default || {};\n";
+    out << "    var dispatch = function(actionName) {\n";
+    out << "        return function() {\n";
+    out << "            var fn = currentState[actionName] || defaultState[actionName] || defaultState.Default;\n";
+    out << "            return fn.apply(this, arguments);\n";
+    out << "        };\n";
+    out << "    };\n";
+    out << "    var export = {\n";
     out << "        enterStartState: function() { currentState.Entry(); },\n";
     out << "        getPreviousState: function() { return previousState; },\n";
     out << "        getState: function() { return currentState; },\n";
@@ -37,20 +44,16 @@ void gen_javascript(std::string const& package_name, std::string const& fsmclass
     out << "        setDebugMode: function(mode) { debugMode = mode; }";
 
     for (auto const& transition_name : transition_set) {
-        out << ",\n";;
-        out << "        " << transition_name << ": function() {\n";
-        out << "            if (currentState." << transition_name << ") {\n";
-        out << "                currentState." << transition_name << "();\n";
-        out << "            } else if (" << start_map << ".Default." << transition_name << ") {\n";
-        out << "                " << start_map << ".Default." << transition_name << "();\n";
-        out << "            } else {\n";
-        out << "                " << start_map << ".Default.Default();\n";
-        out << "            }\n";
-        out << "        }";
+        if (transition_name != "Default") {
+            out << ",\n";
+            out << "        " << transition_name << ": dispatch('" << transition_name << "')";
+        }
     }
 
     out << "\n";
     out << "    };\n";
+
+    out << "    return export;\n";
     out << "};" << endl;
 }
 
