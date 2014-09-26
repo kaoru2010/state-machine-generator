@@ -3,7 +3,7 @@ all: smc_compiler
 CC=gcc
 CXX=g++
 CFLAGS=-I.
-CXXFLAGS=-I.
+CXXFLAGS=-I. -std=c++11
 DEPS = smc_compiler.h smc_compiler_parser.h gen.h
 
 # Disable built-in rules.
@@ -22,13 +22,13 @@ DEPS = smc_compiler.h smc_compiler_parser.h gen.h
 	./lemon -X -p -s $<
 
 smc_compiler: smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o gen_javascript.o gen_swift.o
-	g++ -o smc_compiler smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o gen_javascript.o gen_swift.o
+	$(CXX) -o smc_compiler smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o gen_javascript.o gen_swift.o
 
 smc_compiler_lexer.cpp: smc_compiler_lexer.ll smc_compiler_parser.cpp
 	flex --outfile=smc_compiler_lexer.cpp smc_compiler_lexer.ll
 
 lemon: lemon.c
-	gcc -o lemon -O2 lemon.c
+	$(CC) -o lemon -O2 lemon.c
 
 clean:
 	rm -f smc_compiler smc_compiler_lexer.cpp smc_compiler_parser.cpp smc_compiler_parser.h
