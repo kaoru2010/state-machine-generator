@@ -1,0 +1,41 @@
+%package    fsm_gen
+%class      CameraAction
+%fsmclass   CameraFsm
+
+%start      CameraStateMap::UNINITIALIZED
+
+%map CameraStateMap
+%%
+
+UNINITIALIZED
+{
+    create CREATING { create(); }
+    destroy nil {}
+}
+
+CREATING
+{
+    ready [ctxt.isResumed()] RUNNING {}
+    ready PAUSED {}
+
+    destroy UNINITIALIZED { cancelCreation(); }
+}
+
+PAUSED
+{
+    run RUNNING {}
+}
+
+RUNNING
+    Entry { startPreview(); }
+    Exit  { stopPreview(); }
+{
+    stop PAUSED {}
+}
+
+Default {
+    destroy UNINITIALIZED { destroy(); }
+    Default nil {}
+}
+
+%%
