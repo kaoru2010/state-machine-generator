@@ -44,13 +44,15 @@ void gen_swift(
     for (auto const& action : action_map) {
         cout << "    func " << action.second << "\n";
     }
-    cout << "}\n";
+    cout << "}\n\n";
 
+    cout << "/*\n";
     cout << "public class " << class_name << " : " << package_name << "_Action {\n";
     for (auto const& action : action_map) {
         cout << "    public func " << action.second << " {}\n";
     }
     cout << "}\n";
+    cout << "*/\n";
 
     cout
         << "\n"
