@@ -3,6 +3,7 @@
     #include <stdlib.h>
     #include <assert.h>
     #include "smc_compiler.h"
+    #include <algorithm>
 }
 
 %extra_argument { void *context }
@@ -100,7 +101,7 @@ transitions ::= .
 
 transition(X) ::= word(A) transition_args(B) guard(C) next_state(D) BLOCK_BEGIN actions(E) BLOCK_END. { X = new transition_t(A, B, C, D, E); define_transition(*A, B); }
 
-transition_args(X) ::= PARENTHESIS_BEGIN parameters(A) PARENTHESIS_END. { X = A; A = NULL; }
+transition_args(X) ::= PARENTHESIS_BEGIN parameters(A) PARENTHESIS_END. { std::reverse(A->begin(), A->end()); X = A; A = NULL; }
 transition_args ::= PARENTHESIS_BEGIN PARENTHESIS_END.
 transition_args ::= .
 
