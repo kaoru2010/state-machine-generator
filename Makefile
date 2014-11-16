@@ -21,8 +21,8 @@ DEPS = smc_compiler.h smc_compiler_parser.h gen.h
 %.cpp: %.yy lemon
 	./lemon -X -p -s $<
 
-smc_compiler: smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o gen_javascript.o gen_swift.o
-	$(CXX) -o smc_compiler smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o gen_javascript.o gen_swift.o
+smc_compiler: smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o gen_javascript.o gen_swift.o gen_objc.o
+	$(CXX) -o smc_compiler smc_compiler_parser.o smc_compiler_lexer.o smc_compiler.o gen_javascript.o gen_swift.o gen_objc.o
 
 smc_compiler_lexer.cpp: smc_compiler_lexer.ll smc_compiler_parser.cpp
 	flex --outfile=smc_compiler_lexer.cpp smc_compiler_lexer.ll

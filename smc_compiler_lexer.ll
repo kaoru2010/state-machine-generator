@@ -108,8 +108,11 @@ WORD    [A-Za-z][A-Za-z0-9_.]*|_[A-Za-z][A-Za-z0-9_.]*
 }
 
 <map_action_argument>{
-    [^)]+ return RAW_CODE;
+    [ \t\n]+ ;
+    {WORD} return WORD;
+    "," return COMMA;
     ")" yy_pop_state(); return PARENTHESIS_END;
+    . printf("unmatched: %s\n", yytext);
 }
 
 <map_arguments>{

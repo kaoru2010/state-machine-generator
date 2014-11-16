@@ -52,19 +52,20 @@ public:
 };
 
 using parameter_list_t = std::vector<parameter_t>;
+using argument_list_t = std::vector<std::string>;
 
 class action_t {
-    std::string action_, arguments_;
+    std::string action_;
+    argument_list_t arguments_;
 
 public:
-    action_t(std::string const& action, std::string const& arguments)
+    action_t(std::string const& action, argument_list_t const& arguments)
     :   action_(action)
     ,   arguments_(arguments)
     {}
 
     std::string get_action() const { return action_; }
-    std::string get_arguments() const { return arguments_; }
-    std::string func() const { return action_ + "(" + arguments_ + ")"; }
+    argument_list_t get_arguments() const { return arguments_; }
 };
 
 using action_list_t = std::vector<action_t>;
@@ -141,6 +142,6 @@ void set_class_name(std::string const&);
 void define_map(std::string const&, std::string const&);
 void define_map(std::string const& word, state_list_t const& states);
 void define_transition(std::string const& transition, parameter_list_t *parameter_list);
-void define_action(std::string const& action, std::string const& arguments);
+void define_action(std::string const& action, argument_list_t const& arguments);
 void add_import(std::string const& import);
 void add_include(std::string const& include);

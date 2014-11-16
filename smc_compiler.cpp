@@ -14,7 +14,7 @@
 using namespace std;
 
 set<string> g_transition_set;
-map<string, string> g_action_map;
+map<string, argument_list_t> g_action_map;
 
 string g_start_map, g_start_state;
 
@@ -49,9 +49,9 @@ void define_transition(std::string const& transition, parameter_list_t *paramete
     g_transition_set.insert(transition);
 }
 
-void define_action(std::string const& action, std::string const& arguments)
+void define_action(std::string const& action, argument_list_t const& arguments)
 {
-    g_action_map[action] = action + "(" + arguments + ")";
+    g_action_map[action] = arguments;
 }
 
 vector<string> g_import_list;
@@ -91,6 +91,9 @@ int main(int argc, const char *argv[])
 
     if (argc == 2 && strcmp(argv[1], "--swift") == 0) {
         gen_swift(g_package_name, g_fsmclass, g_state_map_list, g_start_map, g_start_state, g_transition_set, g_class_name, g_action_map, g_include_list, g_import_list);
+    }
+    else if (argc == 2 && strcmp(argv[1], "--objc") == 0) {
+        gen_objc(g_package_name, g_fsmclass, g_state_map_list, g_start_map, g_start_state, g_transition_set, g_class_name, g_action_map, g_include_list, g_import_list);
     }
     else {
         gen_javascript(g_package_name, g_fsmclass, g_state_map_list, g_start_map, g_start_state, g_transition_set, g_class_name);

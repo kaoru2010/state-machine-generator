@@ -7,7 +7,7 @@ using namespace std;
 
 static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::map<string, argument_list_t> const& action_map, transition_set_t const& transition_set);
 
-void gen_swift(
+void gen_objc(
     std::string const& package_name,
     std::string const& fsmclass,
     state_map_list_t const& state_map_list,
@@ -29,73 +29,92 @@ void gen_swift(
     cout << "//\n";
     cout << "\n";
 
-    cout << "import Foundation\n";
+    cout << "#import <Foundation/Foundation.h>\n";
 
     for (auto&& include : include_list) {
         cout << "// #include <" << include << ">\n";
     }
 
     for (auto&& import: import_list) {
-        cout << "import " << import << "\n";
+        cout << "import \"" << import << "\"\n";
     }
     cout << "\n";
 
-    cout << "public protocol " << package_name << "_Action {\n";
+    cout << "@protocol " << package_name << "_Actions\n";
     for (auto const& action : action_map) {
-        cout << "    func " << action.first << "(";
+        cout << "- (void)" << action.first << ":(" << full_fsm_name << " *)fsm";
         bool first = true;
         for (auto const& arg : action.second) {
             if (first) {
-                first = true;
+                first = false;
             }
             else {
-                cout << ", ";
+                cout << " ";
             }
-            cout << arg << ": " << arg;
+            cout << arg << ":" << arg;
         }
-        cout << ")\n";
+        cout << ";\n";
     }
-    cout << "}\n\n";
+    cout << "@end\n\n";
 
     cout
         << "\n"
-        << "public class " << full_fsm_name << " {\n"
+        << "@interface " << full_fsm_name << " : NSObject\n"
         << "\n"
-        << "    private var currentState : " << package_name << "_" << start_map << "_State?\n"
-        << "    private var previousState : " << package_name << "_" << start_map << "_State?\n"
-        << "    public var debugMode = false\n"
-        << "    weak var ctxt : " << class_name << "?\n"
+        << "@property (nonatomic) " << package_name << "_" << start_map << "_State *currentState;\n"
+        << "@property (nonatomic) " << package_name << "_" << start_map << "_State *previousState;\n"
+        << "@property (nonatomic) BOOL debugMode;\n"
+        << "@property (nonatomic, waek) " << class_name << " *ctxt;\n"
         << "\n"
-        << "    public init(context: " << class_name << ") {\n"
-        << "        self.currentState = " << package_name << "_" << start_map << "._" << start_state << "\n"
-        << "        self.ctxt = context\n"
+        << "- (id)init:(" << class_name << " *)context;\n"
+        << "- (void)enterStartState;\n"
+        ;
+
+        for (auto&& transition_name : transition_set) {
+            cout << "- (void)" << transition_name << ";\n";
+        }
+
+    cout
+        << "@end\n"
+        << "\n"
+        << "\n"
+        << "@implementation " << full_fsm_name << "\n"
+        << "\n"
+        << "- (id)init:(" << class_name << " *)context\n"
+        << "{\n"
+        << "    self = [super init];\n"
+        << "    if (self) {\n"
+        << "        self.currentState = " << package_name << "_" << start_map << "._" << start_state << ";\n"
+        << "        self.ctxt = context;\n"
         << "    }\n"
+        << "    return self;\n"
+        << "}\n"
         << "\n"
-        << "    public func enterStartState() {\n"
-        << "        if let context = ctxt {\n"
-        << "            currentState!.Entry(self, ctxt: context)\n"
-        << "        }\n"
-        << "    }\n"
+        << "- (void)enterStartState\n"
+        << "{\n"
+        << "    [self.currentState fsm:self ctxt:self.ctxt Entry];\n"
+        << "}\n"
         << "\n"
-        << "    private func setState(state:" << package_name << "_" << start_map << "_State) {\n"
-        << "        currentState = state;\n"
-        << "        if (debugMode) {\n"
-        << "            NSLog(\"ENTER STATE: %s\", state.getName())\n"
-        << "        }\n"
+        << "- (void)setState:(" << package_name << "_" << start_map << "_State)state\n"
+        << "{\n"
+        << "    _currentState = state;\n"
+        << "    if (self.debugMode) {\n"
+        << "        NSLog(\"ENTER STATE: %s\", state.getName())\n"
         << "    }\n"
+        << "}\n"
         ;
 
     for (auto&& transition_name : transition_set) {
         cout << "\n";
-        cout << "    public func " << transition_name << "() {\n";
-        cout << "        if let context = ctxt {\n";
-        cout << "            currentState!." << transition_name << "(self, ctxt: context)\n";
-        cout << "        }\n";
-        cout << "    }\n";
+        cout << "- (void)" << transition_name << "\n";
+        cout << "{\n";
+        cout << "    NSAssert(self.currentState, @\"State-loss. Cannot send events in an action.\");\n";
+        cout << "    [self.currentState fsm:self ctxt:self.ctxt " << transition_name << "];\n";
+        cout << "}\n";
     }
 
     cout << "\n";
-    cout << "}\n";
+    cout << "@end\n";
     cout << "\n";
     cout << "\n";
     cout << "\n";
@@ -120,31 +139,31 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
 
         // 遷移先のステートがある場合には Exit() を出力する。
         if ( !transition.get_next_state().empty()) {
-            out << "fsm.currentState!.Exit(fsm, ctxt: ctxt)\n";
+            out << "[fsm.currentState fsm:fsm ctxt:ctxt Exit];\n";
         }
 
         // 現在のステートをNULLにセットする。
-        out << "fsm.previousState = fsm.currentState\n";
+        out << "fsm.previousState = fsm.currentState;\n";
 
         // カスタムアクションを出力する。
         if ( !transition.get_action_list().empty()) {
-            out << "fsm.currentState = nil\n";
+            out << "fsm.currentState = nil;\n";
             out << "//try {" << "\n";
             out << "// Custom action" << "\n";
         }
 
         for (auto const& action : transition.get_action_list()) {
-             out << "ctxt." << action.get_action() << "(";
-             bool first = true;
-             for (auto const& arg : action.get_arguments()) {
+            out << "[ctxt " << action.get_action() << ":fsm ";
+            bool first = true;
+            for (auto const& arg : action.get_arguments()) {
                 if (first) {
                     first = false;
                 } else {
-                    cout << ", ";
+                    cout << " ";
                 }
-                cout << arg << ": " << arg;
+                cout << arg << ":" << arg;
             }
-            cout << ")\n";
+            cout << "];\n";
         }
 
         // 次の遷移先への移動をfinally区の中に入れるかどうか
@@ -157,11 +176,11 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
 
         // 遷移先のステートがある場合には Entry() を出力する。
         if (transition.get_next_state().empty()) {
-             out(next_state_indent) << "fsm.currentState = fsm.previousState\n";
+             out(next_state_indent) << "fsm.currentState = fsm.previousState;\n";
         }
         else {
-             out(next_state_indent) << "fsm.setState(" << state_map_name << "._" << transition.get_next_state() << ")\n";
-             out(next_state_indent) << "fsm.currentState!.Entry(fsm, ctxt: ctxt)\n";
+             out(next_state_indent) << "[fsm setState:" << state_map_name << "._" << transition.get_next_state() << "];\n";
+             out(next_state_indent) << "[fsm.currentState fsm:fsm ctxt:ctxt Entry];\n";
         }
 
         if ( !transition.get_action_list().empty()) {
@@ -217,75 +236,79 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
             default_state_present = true;
 
         cout << "\n";
-        out(1) << "public class " << state.get_state_name() << " : "<< (default_state ? base_state_impl_name : "Default") << " {\n";
-        out(2) << func_decl << "getName() -> String { return \"" << state.get_state_name() << "\" }\n\n";
-        out(2) << func_decl << "Entry(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
+        out(0) << "@implementation " << state.get_state_name() << " : "<< (default_state ? base_state_impl_name : "Default") << " {\n";
+        out(0) << "- (NSString*)name {\n";
+        out(0) << "    return @\"" << state.get_state_name() << "\";\n";
+        out(0) << "}\n";
+        cout << "\n";
+        out(0) << "- (void)fsm:(" << full_fsm_name << " *)fsm ctxt:(" << class_name << " *)ctxt Entry {\n";
 
         for (auto&& action : state.get_entry()) {
-             out(3) << "ctxt." << action.get_action() << "(";
-             bool first = true;
-             for (auto const& arg : action.get_arguments()) {
+            out(1) << "[ctxt " << action.get_action() << ":fsm ";
+            bool first = true;
+            for (auto const& arg : action.get_arguments()) {
                 if (first) {
                     first = false;
                 } else {
-                    cout << ", ";
+                    cout << " ";
                 }
-                cout << arg << ": " << arg;
+                cout << arg << ":" << arg;
             }
-            cout << ")\n";
+            cout << "];\n";
         }
-        out(2) << "}\n";
+        out(0) << "}\n";
         cout << "\n";
-        out(2) << func_decl << "Exit(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
+        out(0) << "- (void)fsm:(" << full_fsm_name << " *)fsm ctxt:(" << class_name << " *)ctxt Exit {\n";
         for (auto const& action : state.get_exit()) {
-             out(3) << "ctxt." << action.get_action() << "(";
-             bool first = true;
-             for (auto const& arg : action.get_arguments()) {
+            // out(1) << "ctxt." << action.func() << "\n";
+            out(1) << "[ctxt " << action.get_action() << ":fsm ";
+            bool first = true;
+            for (auto const& arg : action.get_arguments()) {
                 if (first) {
                     first = false;
                 } else {
-                    cout << ", ";
+                    cout << " ";
                 }
-                cout << arg << ": " << arg;
+                cout << arg << ":" << arg;
             }
-            cout << ")\n";
+            cout << "];\n";
         }
-        out(2) << "}\n";
+        out(0) << "}\n";
 
         for (auto const& transition_name_list_pair : state.get_transitions()) {
             string const& transition_name = transition_name_list_pair.first;
 
             cout << "\n";
-            out(2) << func_decl << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name;
+            out(0) << "- (void)fsm:(" << full_fsm_name << " *)fsm ctxt:(" << class_name << " *)ctxt " << transition_name << "\n";
             for (auto&& parameter : transition_name_list_pair.second.at(0).get_parameter_list()) {
                 cout << ", " << parameter.get_name() << ":" << parameter.get_type();
             }
-            cout << ") {\n";
+            cout << "{\n";
 
             bool else_block = false;
             for (auto&& transition : transition_name_list_pair.second) {
                 if ( !transition.get_guard().empty()) {
-                    out(3) << (else_block ? "else if" : "if") << " (" << transition.get_guard() << ") {\n";
+                    out(1) << (else_block ? "else if" : "if") << " (" << transition.get_guard() << ") {\n";
 
                     generate_transition(transition, 5);
 
-                    out(3) << "}\n";
+                    out(1) << "}\n";
                     else_block = true;
                 }
                 else {
                     if (else_block) {
-                        out(3) << "else {\n";
+                        out(1) << "else {\n";
                     }
 
-                    generate_transition(transition, else_block ? 4 : 3);
+                    generate_transition(transition, else_block ? 2 : 1);
 
                     if (else_block) {
-                        out(3) << "}\n";
+                        out(1) << "}\n";
                     }
                 }
             }
 
-            out(2) << "}\n";
+            out(0) << "}\n";
         }
 
         cout << "\n";

@@ -84,7 +84,17 @@ static void generate_state_map(state_map_t const& state_map)
         }
 
         for (auto const& action : transition.get_action_list()) {
-            out << "    ctxt." << action.func() << ";\n";
+            out << "    ctxt." << action.get_action() << "(";
+            bool first = true;
+            for (auto const& arg : action.get_arguments()) {
+                if (first) {
+                    first = false;
+                } else {
+                    cout << ", ";
+                }
+                cout << arg;
+            }
+            cout << ");\n";
         }
 
         // 次の遷移先への移動をfinally区の中に入れるかどうか
@@ -120,13 +130,35 @@ static void generate_state_map(state_map_t const& state_map)
         out(3) << "Entry : function() {\n";
 
         for (auto&& action : state.get_entry()) {
-             out(4) << "ctxt." << action.func() << ";\n";
+            out(4) << "    ctxt." << action.get_action() << "(";
+            bool first = true;
+            for (auto const& arg : action.get_arguments()) {
+                if (first) {
+                    first = false;
+                } else {
+                    cout << ", ";
+                }
+                cout << arg;
+            }
+            cout << ");\n";
+            // out(4) << "ctxt." << action.func() << ";\n";
         }
         out(3) << "},\n";
         out(3) << "Exit : function() {\n";
              ;
         for (auto const& action : state.get_exit()) {
-             out(4) << "ctxt." << action.func() << ";\n";
+            out(4) << "    ctxt." << action.get_action() << "(";
+            bool first = true;
+            for (auto const& arg : action.get_arguments()) {
+                if (first) {
+                    first = false;
+                } else {
+                    cout << ", ";
+                }
+                cout << arg;
+            }
+            cout << ");\n";
+             // out(4) << "ctxt." << action.func() << ";\n";
         }
         out(3) << "}";
 

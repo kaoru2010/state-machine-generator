@@ -23,7 +23,8 @@
 %type transitions { transition_list_t * }
 %type action { action_t * }
 %type actions { action_list_t * }
-%type arguments { std::string * }
+%type arguments { argument_list_t * }
+%type second_arguments { argument_list_t * }
 %type parameter { parameter_t * }
 %type parameters { parameter_list_t * }
 %type transition_args { parameter_list_t * }
@@ -41,6 +42,7 @@
 %destructor action { delete $$; }
 %destructor actions { delete $$; }
 %destructor arguments { delete $$; }
+%destructor second_arguments { delete $$; }
 %destructor parameter { delete $$; }
 %destructor parameters { delete $$; }
 %destructor transition_args { delete $$; }
@@ -119,10 +121,14 @@ next_state ::= NIL.
 actions(X) ::= action(A) actions(B). { if (B) { X = B; B = NULL; } else { X = new action_list_t(); } X->push_back(*A); }
 actions ::= .
 
-action(X) ::= word(A) PARENTHESIS_BEGIN arguments(B) PARENTHESIS_END SEMICOLON. { define_action(*A, B ? *B : ""); X = new action_t(*A, B ? *B : ""); }
+action(X) ::= word(A) PARENTHESIS_BEGIN arguments(B) PARENTHESIS_END SEMICOLON. { define_action(*A, *B); X = new action_t(*A, *B); }
 
 //arguments ::= raw_code COMMA arguments.
-arguments(X) ::= raw_code(A). { X = A; A = NULL; }
+//arguments(X) ::= raw_code(A). { X = A; A = NULL; }
+arguments(X) ::= word(A) second_arguments(B). { X = B; B = NULL; X->push_back(*A); }
+arguments(X) ::= . { X = new argument_list_t(); }
+second_arguments(X) ::= COMMA word(A) second_arguments(B). { X = B; B = NULL; X->push_back(*A); }
+second_arguments(X) ::= . { X = new argument_list_t(); }
 
 entry(X) ::= ENTRY BLOCK_BEGIN actions(A) BLOCK_END. { X = A; A = NULL; }
 entry ::= .
