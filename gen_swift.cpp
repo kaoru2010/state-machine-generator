@@ -107,7 +107,7 @@ void gen_swift(
         << "    private func setState(state:" << package_name << "_" << start_map << "_State) {\n"
         << "        currentState = state;\n"
         << "        if (debugMode) {\n"
-        << "            NSLog(\"ENTER STATE: %s\", state.getName())\n"
+        << "            NSLog(\"ENTER STATE: %@\", state.getName())\n"
         << "        }\n"
         << "    }\n"
         ;
