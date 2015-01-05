@@ -3,9 +3,38 @@
 #include "smc_compiler.h"
 #include "gen.h"
 
+
 using namespace std;
 
-static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::map<string, string> const& action_map, transition_set_t const& transition_set);
+template <typename T>
+typename T::mapped_type get(T const& map, typename T::key_type const& key)
+{
+    typename T::const_iterator iter(map.find(key));
+    return iter != map.end() ? iter->second : typename T::mapped_type();
+}
+
+static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::map<string, string> const& action_map, transition_set_t const& transition_set, std::map<std::string, parameter_list_t> const& transition_params);
+
+string declare_param(std::map<std::string, parameter_list_t> const& transition_params, std::string const transition_name) {
+    parameter_list_t plist = get(transition_params, transition_name);
+    string params = "";
+    for (auto& param : plist) {
+        if (params != "") {
+            params += ", ";
+        }
+        params += param.get_name() + ":" + param.get_type();
+    }
+    return params;
+}
+
+string call_param(std::map<std::string, parameter_list_t> const& transition_params, std::string const transition_name) {
+    parameter_list_t plist = get(transition_params, transition_name);
+    string call_params = "";
+    for (auto& param : plist) {
+        call_params += ", " + param.get_name() + ": " + param.get_name();
+    }
+    return call_params;
+}
 
 void gen_swift(
     std::string const& package_name,
@@ -17,7 +46,8 @@ void gen_swift(
     std::string const& class_name,
     std::map<std::string, std::string> const& action_map,
     std::vector<std::string> const& include_list,
-    std::vector<std::string> const& import_list)
+    std::vector<std::string> const& import_list,
+    std::map<std::string, parameter_list_t> const& transition_params)
 {
     string full_fsm_name = package_name + "_" + fsmclass;
 
@@ -40,19 +70,19 @@ void gen_swift(
     }
     cout << "\n";
 
-    cout << "public protocol " << package_name << "_Action {\n";
-    for (auto const& action : action_map) {
-        cout << "    func " << action.second << "\n";
-    }
-    cout << "}\n\n";
+//    cout << "public protocol " << package_name << "_Action {\n";
+//    for (auto const& action : action_map) {
+//        cout << "    func " << action.second << "\n";
+//    }
+//    cout << "}\n\n";
 
-    cout << "/*\n";
-    cout << "public class " << class_name << " : " << package_name << "_Action {\n";
-    for (auto const& action : action_map) {
-        cout << "    public func " << action.second << " {}\n";
-    }
-    cout << "}\n";
-    cout << "*/\n";
+//    cout << "/*\n";
+//    cout << "public class " << class_name << " : " << package_name << "_Action {\n";
+//    for (auto const& action : action_map) {
+//        cout << "    public func " << action.second << " {}\n";
+//    }
+//    cout << "}\n";
+//    cout << "*/\n";
 
     cout
         << "\n"
@@ -77,16 +107,20 @@ void gen_swift(
         << "    private func setState(state:" << package_name << "_" << start_map << "_State) {\n"
         << "        currentState = state;\n"
         << "        if (debugMode) {\n"
-        << "            NSLog(\"ENTER STATE: %s\", state.getName())\n"
+        << "            NSLog(\"ENTER STATE: %@\", state.getName())\n"
         << "        }\n"
         << "    }\n"
         ;
 
+
     for (auto&& transition_name : transition_set) {
+        std::string params = declare_param(transition_params, transition_name);
+        std::string call_params = call_param(transition_params, transition_name);
+
         cout << "\n";
-        cout << "    public func " << transition_name << "() {\n";
+        cout << "    public func " << transition_name << "(" << params << ") {\n";
         cout << "        if let context = ctxt {\n";
-        cout << "            currentState!." << transition_name << "(self, ctxt: context)\n";
+        cout << "            currentState!." << transition_name << "(self, ctxt: context" << call_params << ")\n";
         cout << "        }\n";
         cout << "    }\n";
     }
@@ -98,12 +132,12 @@ void gen_swift(
     cout << "\n";
 
     for (auto&& state_map : state_map_list) {
-        generate_state_map(state_map, package_name, fsmclass, class_name, action_map, transition_set);
+        generate_state_map(state_map, package_name, fsmclass, class_name, action_map, transition_set, transition_params);
     }
 }
 
 
-static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::map<string, string> const& action_map, transition_set_t const& transition_set)
+static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::map<string, string> const& action_map, transition_set_t const& transition_set, std::map<std::string, parameter_list_t> const& transition_params)
 {
     string full_fsm_name = package_name + "_" + fsmclass;
 
@@ -164,7 +198,9 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
     cout << "    func Default(fsm:" << full_fsm_name << ", ctxt:" << class_name << ")\n";
     for (auto&& transition_name : transition_set) {
         if (transition_name != "Default") {
-            cout << "    func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << ")\n";
+            string params = declare_param(transition_params, transition_name);
+            if (params != "") { params = ", " + params; }
+            cout << "    func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << params << ")\n";
         }
     }
     cout << "}\n";
@@ -188,7 +224,10 @@ static void generate_state_map(state_map_t const& state_map, std::string const& 
     out(2) << "func Default(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") { abort() }\n";
     for (auto&& transition_name : transition_set) {
         if (transition_name != "Default") {
-            out(2) << "func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << ") {\n";
+            string params = declare_param(transition_params, transition_name);
+            string calls = call_param(transition_params, transition_name);
+            if (params != "") { params = ", " + params; }
+            out(2) << "func " << transition_name << "(fsm:" << full_fsm_name << ", ctxt:" << class_name << params << ") {\n";
             out(3) << "Default(fsm, ctxt: ctxt)\n";
             out(2) << "}\n";
         }
