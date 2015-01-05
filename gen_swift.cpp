@@ -6,20 +6,16 @@
 
 using namespace std;
 
-template <typename T>
-typename T::mapped_type get(T const& map, typename T::key_type const& key)
-{
-    typename T::const_iterator iter(map.find(key));
-    return iter != map.end() ? iter->second : typename T::mapped_type();
-}
-
 static void generate_state_map(state_map_t const& state_map, std::string const& package_name, std::string const& fsmclass, std::string const& class_name, std::map<string, string> const& action_map, transition_set_t const& transition_set, std::map<std::string, parameter_list_t> const& transition_params);
 
 string declare_param(std::map<std::string, parameter_list_t> const& transition_params, std::string const transition_name) {
-    parameter_list_t plist = get(transition_params, transition_name);
-    string params = "";
-    for (auto& param : plist) {
-        if (params != "") {
+    auto ite = transition_params.find(transition_name);
+    if (ite == transition_params.end())
+        return {};
+
+    string params;
+    for (auto const& param : ite->second) {
+        if ( !params.empty()) {
             params += ", ";
         }
         params += param.get_name() + ":" + param.get_type();
@@ -28,9 +24,12 @@ string declare_param(std::map<std::string, parameter_list_t> const& transition_p
 }
 
 string call_param(std::map<std::string, parameter_list_t> const& transition_params, std::string const transition_name) {
-    parameter_list_t plist = get(transition_params, transition_name);
-    string call_params = "";
-    for (auto& param : plist) {
+    auto ite = transition_params.find(transition_name);
+    if (ite == transition_params.end())
+        return {};
+
+    string call_params;
+    for (auto& param : ite->second) {
         call_params += ", " + param.get_name() + ": " + param.get_name();
     }
     return call_params;
