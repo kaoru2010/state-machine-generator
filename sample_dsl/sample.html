@@ -1,0 +1,90 @@
+<html>
+<body>
+<p>
+    <input type="button" id="btn1" value="start">
+    <input type="button" id="btn2" value="stop">
+    <input type="button" id="btn3" value="invoke">
+    <input id="param">
+</p>
+<p id="output">
+</p>
+<script src="http://code.jquery.com/jquery-1.11.3.js"></script>
+<script>
+var StateMachine = function() {
+    var start = function() { setState(1); };
+    var stop = function() { setState(0); };
+    var invoke = function(param) { alert(param); };
+    var doNothing = function() {};
+
+    var entryTable = [
+        function() { $('#param').val(''); },
+        function() { $('#param').css('background-color' ,'#ffcccc'); },
+        doNothing
+    ];
+
+    var exitTable = [
+        doNothing,
+        function() { $('#param').css('background-color' ,'#ffffff'); },
+        doNothing
+    ];
+
+    var decisionTable = [
+        // STOPPED
+        [
+            start,
+            doNothing,
+            doNothing
+        ],
+
+        // RUNNING
+        [
+            doNothing,
+            stop,
+            invoke,
+        ]
+    ];
+
+    var stateNameMap = ["STOPPED", "RUNNING"];
+
+    var currentState = -1;
+    var inTransition = false;
+    var setState = function(state, action) {
+        if (currentState >= 0) {
+            exitTable[currentState]();
+        }
+
+        console.log("ENTER STATE: " + stateNameMap[state]);
+        currentState = state;
+
+        if (action) {
+            action();
+        }
+
+        entryTable[state]();
+    };
+    var doTransition = function(f) {
+        if (inTransition) throw "inTransition is true";
+        inTransition = true;
+        f();
+        inTransition = false;
+    };
+
+    return {
+        enterStartState: function() { setState(0); },
+        start: function() { doTransition(function() { decisionTable[currentState][0](); }); },
+        stop: function() { doTransition(function() { decisionTable[currentState][1](); }); },
+        invoke: function(param) { doTransition(function() { decisionTable[currentState][2](param); }); }
+    };
+};
+
+$(function() {
+    var sm = StateMachine();
+    sm.enterStartState();
+
+    $('#btn1').click(function() { sm.start(); });
+    $('#btn2').click(function() { sm.stop(); });
+    $('#btn3').click(function() { sm.invoke($('#param').val()); });
+});
+</script>
+</body>
+</html>

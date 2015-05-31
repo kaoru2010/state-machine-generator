@@ -1,0 +1,27 @@
+%package    fsm_simple
+%class      SimpleAction
+%fsmclass   SimpleFsm
+
+%start      SimpleStateMap::INIT
+
+%map SimpleStateMap
+%%
+
+INIT
+{
+    go NEXT {}
+
+    dummy(i: int) [ i % 2 == 0 ] nil { act1(i); }
+    dummy(i: int) nil { act2(i); }
+}
+
+NEXT
+{
+    back INIT {}
+}
+
+Default {
+    Default nil {}
+}
+
+%%
