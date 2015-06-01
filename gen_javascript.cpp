@@ -390,9 +390,9 @@ void gen_javascript(
     out << "            currentState = state;\n";
     out << "\n";
     out << "            // Invoke entry action\n";
-    out << "            currentState[1]();\n";
+    out << "            state[1]();\n";
     out << "\n";
-    out << "            if (debugMode) { console.log('ENTER STATE: %s', state.getName()); }\n";
+    out << "            if (debugMode) { console.log('ENTER STATE: %s', state[0]); }\n";
     out << "        }\n";
     out << "    };\n";
     out << "    var doTransition = function(f) {\n";
@@ -408,7 +408,7 @@ void gen_javascript(
         generate_state_map(state_map, transition_set);
     }
 
-    out << "    var export = {\n";
+    out << "    var self = {\n";
     out << "        enterStartState: function() { setState(" << start_map << "." << start_state << "); },\n";
     out << "        getState: function() { return currentState; },\n";
     out << "        isDebugMode: function() { return debugMode; },\n";
@@ -419,7 +419,7 @@ void gen_javascript(
     for (auto const& transition_name : transition_set) {
         if (transition_name != "Default") {
             out << ",\n";
-            out << "        " << transition_name << ": function() { currentState[" << transition_id << "].apply(export, arguments); }";
+            out << "        " << transition_name << ": function() { currentState[" << transition_id << "].apply(self, arguments); }";
             transition_id++;
         }
     }
@@ -427,7 +427,7 @@ void gen_javascript(
     out << "\n";
     out << "    };\n";
 
-    out << "    return export;\n";
+    out << "    return self;\n";
     out << "};" << endl;
 }
 
