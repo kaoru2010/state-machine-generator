@@ -2,22 +2,20 @@
 %class      SimpleAction
 %fsmclass   SimpleFsm
 
-%start      SimpleStateMap::INIT
+%start      SimpleStateMap::STOPPED
 
 %map SimpleStateMap
 %%
 
-INIT
+STOPPED
 {
-    go NEXT {}
-
-    dummy(i: int) [ i % 2 == 0 ] nil { act1(i); }
-    dummy(i: int) nil { act2(i); }
+    start STARTED {}
 }
 
-NEXT
+STARTED
 {
-    back INIT {}
+    stop STOPPED {}
+    invoke(text: String) nil { alert(text); }
 }
 
 Default {

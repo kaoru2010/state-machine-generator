@@ -510,7 +510,7 @@ static void generate_state_map(state_map_t const& state_map, transition_set_t co
 
     auto no_ation = func_gen("noAction");
     no_ation->set_prefix("    ");
-    function_list->add(no_ation);
+    function_list->add(stmt_gen(no_ation));
 
     for (auto const& state : state_list) {
         if (state.get_state_name() == "Default") {
@@ -532,7 +532,7 @@ static void generate_state_map(state_map_t const& state_map, transition_set_t co
             for (auto&& action : state.get_entry()) {
                  func->add_body("ctxt." + action.func() + ";");
             }
-            function_list->add(func);
+            function_list->add(stmt_gen(func));
             state_map->add(token_gen(state.get_state_name() + "_Entry"));
         }
 
@@ -545,7 +545,7 @@ static void generate_state_map(state_map_t const& state_map, transition_set_t co
             for (auto&& action : state.get_exit()) {
                  func->add_body("ctxt." + action.func() + ";");
             }
-            function_list->add(func);
+            function_list->add(stmt_gen(func));
             state_map->add(token_gen(state.get_state_name() + "_Exit"));
         }
 
@@ -566,7 +566,7 @@ static void generate_state_map(state_map_t const& state_map, transition_set_t co
             state_map->add(token_gen(state.get_state_name() + "_" + transition_name));
 
             auto func = func_gen(state.get_state_name() + "_" + transition_name);
-            function_list->add(func);
+            function_list->add(stmt_gen(func));
             func->set_prefix("    ");
             for (auto&& parameter : transition_list->second.at(0).get_parameter_list()) {
                 func->add_argument(parameter.get_name());
