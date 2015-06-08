@@ -36,7 +36,7 @@ void gen_javascript(std::string const& package_name, std::string const& fsmclass
     out << "            return fn.apply(this, arguments);\n";
     out << "        };\n";
     out << "    };\n";
-    out << "    var export = {\n";
+    out << "    return {\n";
     out << "        enterStartState: function() { currentState.Entry(); },\n";
     out << "        getPreviousState: function() { return previousState; },\n";
     out << "        getState: function() { return currentState; },\n";
@@ -53,7 +53,6 @@ void gen_javascript(std::string const& package_name, std::string const& fsmclass
     out << "\n";
     out << "    };\n";
 
-    out << "    return export;\n";
     out << "};" << endl;
 }
 
